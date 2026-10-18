@@ -26,6 +26,8 @@ let pendingDeleteCaseId = "";
 let activeFilter = "All";
 let activeSearch = "";
 let unsubscribeNarratives = null;
+let unsubscribeCases = null;
+let caseSubscriptionGeneration = 0;
 let evidenceBlockCounter = 0;
 let investigatorBlockCounter = 0;
 let plateBlockCounter = 0;
@@ -72,30 +74,48 @@ const addLocationBtn = document.getElementById("addCidLocationBtn");
 const chargeList = document.getElementById("cidChargeList");
 const addChargeBtn = document.getElementById("addCidChargeBtn");
 
-if(casesList){
-  subscribeToCidCases(
-    cases => {
-      cidCases = cases;
-      renderCases();
-    },
-    error => {
-      console.error("CID case sync failed:", error);
-      casesList.innerHTML = emptyStateHTML(
-        "CID cases unavailable",
-        "Case files could not be loaded. Check portal access and Firebase rules.",
-        "error"
-      );
-    }
-  );
+function stopCaseSubscription(){
+  caseSubscriptionGeneration++;
+  if(typeof unsubscribeCases === "function") unsubscribeCases();
+  unsubscribeCases = null;
 }
 
 watchStaffAuth(access => {
   staffAccess = access;
+  stopCaseSubscription();
   updateAccessUI();
-
-  if(access.user && !access.canEdit){
-    setAuthStatus("This account does not have CID case access.", "warning");
+  if(!access.canEdit){
+    cidCases = [];
+    if(!deletingCase){
+      closeDetailsModal();
+      closeCaseModal();
+    }
+    renderFilters();
+    renderStatus();
+    if(casesList) casesList.innerHTML = emptyStateHTML(
+      "Authorized CID access required",
+      "Sign in with an approved staff account to view case files."
+    );
+    if(access.user) setAuthStatus("This account does not have CID case access.", "warning");
+    return;
   }
+  if(!casesList) return;
+  casesList.innerHTML = emptyStateHTML("Loading CID cases", "Checking controlled case files.");
+  const generation = caseSubscriptionGeneration;
+  unsubscribeCases = subscribeToCidCases(
+    cases => {
+      if(generation !== caseSubscriptionGeneration) return;
+      cidCases = cases;
+      renderCases();
+    },
+    error => {
+      if(generation !== caseSubscriptionGeneration) return;
+      console.error("CID case sync failed:", error);
+      cidCases = [];
+      renderStatus();
+      casesList.innerHTML = emptyStateHTML("CID cases unavailable", "Case files could not be loaded. Check portal access and Firebase rules.", "error");
+    }
+  );
 });
 
 createCaseBtn?.addEventListener("click", openCaseModal);

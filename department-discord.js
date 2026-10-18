@@ -32,8 +32,9 @@ export function departmentDiscordPayload(entry, publish){
     }
   }else{
     // Schedule details are rendered in fields, never repeated in the description.
-    if(publish && event.description) embed.description=clip(event.description,3000);
-    else{
+    if(publish){
+      if(event.description) embed.description=clip(event.description,3000);
+    }else{
       embed.fields.push({name:"Title",value:clip(event.title || entry.targetLabel || "Department Event",256),inline:false});
     }
     const field=(name,value)=>embed.fields.push({name,value:clip(value || "Not specified"),inline:true});

@@ -12,7 +12,9 @@ import {
 import { auth, db } from "./firebase-config.js";
 
 export function watchStaffAuth(onChange){
+  let generation = 0;
   return onAuthStateChanged(auth, async user => {
+    const current = ++generation;
     if(!user){
       onChange({
         user:null,
@@ -22,7 +24,13 @@ export function watchStaffAuth(onChange){
       return;
     }
 
-    const role = await getStaffRole(user.uid);
+    let role = null;
+    try{
+      role = await getStaffRole(user.uid);
+    }catch(error){
+      console.error("Staff permissions could not be loaded:", error);
+    }
+    if(current !== generation) return;
 
     onChange({
       user,
