@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>APD Suggestions</title>
+
+<link rel="stylesheet" href="style.css">
+<script src="portal-ui.js" defer></script>
+
+<script type="module" src="portal-bootstrap.js"></script>
+<link rel="icon" type="image/png" href="images/austin-police-patch.png">
+</head>
+
+<body>
+
+<div class="page-layout">
+
+<header class="simple-header">
+
+<h1>APD Suggestions</h1>
+
+<p>
+
+Submit suggestions directly to department command staff.
+
+</p>
+<div class="last-updated">Rattler Nation · Austin Police Department</div>
+
+</header>
+
+<section class="page-card">
+
+<p class="external-note">Submitting opens Google Forms in a new tab. Check that tab for confirmation that your suggestion was received.</p>
+<form id="suggestionForm">
+
+<div class="form-group">
+
+<label>
+
+Officer Name
+
+<span class="required">*</span>
+
+</label>
+
+<input id="officerName" required>
+
+</div>
+
+
+<div class="form-group">
+
+<label>
+
+Badge Number
+
+<span class="required">*</span>
+
+</label>
+
+<input id="badge" required>
+
+</div>
+
+
+<div class="form-group">
+
+<label>
+
+Suggestion Category
+
+<span class="required">*</span>
+
+</label>
+
+<select id="category" required>
+
+<option>Department Policy</option>
+
+<option>Training</option>
+
+<option>Equipment</option>
+
+<option>Roster / Personnel</option>
+
+<option>Operations</option>
+
+<option>General Suggestion</option>
+
+<option>Other</option>
+
+</select>
+
+</div>
+
+
+<div class="form-group">
+
+<label>
+
+Suggestion Details
+
+<span class="required">*</span>
+
+</label>
+
+<textarea id="details" rows="7" required></textarea>
+
+</div>
+
+
+<div class="form-group">
+
+<label>
+
+Urgency Level (Optional)
+
+</label>
+
+<select id="urgency">
+<option value="">Select urgency (optional)</option>
+
+<option>Low</option>
+
+<option>Medium</option>
+
+<option>High</option>
+
+<option>Critical</option>
+
+</select>
+
+</div>
+
+
+
+
+
+<button class="submit-btn">
+
+Submit Suggestion
+
+</button>
+
+</form>
+
+
+<div id="successMessage"></div>
+
+</section>
+
+<a class="back-button" href="index.html">
+
+← Return Home
+
+</a>
+
+</div>
+
+<script src="suggestions.js"></script>
+
+</body>
+
+</html>

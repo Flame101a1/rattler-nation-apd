@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>APD Training Events</title>
+
+<link rel="stylesheet" href="style.css">
+<script src="portal-ui.js" defer></script>
+<script type="module" src="portal-bootstrap.js"></script>
+<link rel="icon" type="image/png" href="images/austin-police-patch.png">
+</head>
+
+<body>
+
+<div class="page-layout">
+
+<header class="simple-header">
+<h1>APD Training Schedule</h1>
+<p>All active APD training events and scheduled classes synced from the shared planner.</p>
+<div class="last-updated">Synced from Calendar & Planner</div>
+</header>
+
+<section class="page-card">
+<div class="training-page-header">
+<div>
+<h2>Upcoming Training</h2>
+<p>Review upcoming department training sessions below.</p>
+</div>
+
+<div class="page-actions compact">
+<a class="back-button small" href="training.html">Training Center</a>
+<a class="back-button small" href="trainingprint.html">Printable Schedule</a>
+</div>
+</div>
+
+<div id="training-list" class="training-event-grid">
+<div class="empty-state is-loading">
+<strong>Loading training schedule</strong>
+<p>Pulling the latest Training and FTO Training events from the shared planner.</p>
+</div>
+</div>
+</section>
+
+<div class="page-actions">
+<a class="back-button" href="index.html">Return Home</a>
+</div>
+
+</div>
+
+<script type="application/json" data-portal-module="training.js"></script>
+
+</body>
+</html>

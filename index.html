@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Rattler Nation Austin Police Department portal for announcements, training, resources, forms, and department references." />
+  <title>APD Portal</title>
+  <link rel="icon" type="image/png" href="images/austin-police-patch.png" />
+  <link rel="preload" as="image" href="images/austin-police-patch.png" />
+  <link rel="preload" as="image" href="images/hero1.png" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="portal-ui.js" defer></script>
+  <script type="application/json" data-portal-module="script.js"></script>
+<script type="module" src="portal-bootstrap.js"></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <img class="logo" src="images/austin-police-patch.png" alt="Austin Police Department patch" width="78" height="78" decoding="async" />
+        <div class="brand-text">
+          <h1>Austin Police Department</h1>
+          <p>Rattler Nation</p>
+          <span>To Protect and To Serve</span>
+        </div>
+      </div>
+
+      <p class="menu-title">Main Menu</p>
+
+      <nav class="side-nav" aria-label="Main menu">
+        <a class="active" href="index.html">Dashboard</a>
+        <a href="announcements.html">Announcements</a>
+        <a href="training.html">Training Calendar</a>
+        <a href="warrantform.html">Warrant Form</a>
+        <a href="complaints.html">Officer Complaints</a>
+        <a href="suggestions.html">Suggestions</a>
+        <a href="resources.html">Officer Resources</a>
+        <a href="cid.html">CID Portal</a>
+        <a href="chainofcommand.html">Chain of Command</a>
+        <a href="gallery.html">Gallery</a>
+        <a class="admin-link" id="adminSidebarLink" href="admin.html" hidden>Admin Console</a>
+      </nav>
+
+      <div class="sidebar-card reference-card">
+        <h3>Officer Reference</h3>
+        <a href="training.html">
+          <span>Training Calendar</span>
+          <strong>Review schedule</strong>
+        </a>
+        <a href="announcements.html">
+          <span>Announcements</span>
+          <strong>Read updates</strong>
+        </a>
+        <a href="siteissues.html">
+          <span>Portal Support</span>
+          <strong>Report an issue</strong>
+        </a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <nav class="top-nav" aria-label="Department pages">
+          <a class="active" href="index.html"><span>Home</span></a>
+          <a href="sop.html"><span>SOP</span></a>
+          <a href="cid.html"><span>CID Portal</span></a>
+          <a href="cidsop.html"><span>CID SOP</span></a>
+          <a href="roster.html"><span>Roster</span></a>
+          <a href="penalcodes.html"><span>Penal Codes</span></a>
+          <a href="training.html"><span>Training</span></a>
+          <a href="equipment.html"><span>Equipment</span></a>
+        </nav>
+
+        <div class="portal-clock" aria-live="polite">
+          <div id="currentTime">00:00 PM</div>
+          <div id="currentDate">Loading...</div>
+        </div>
+      </header>
+
+      <section class="hero portal-dashboard-header">
+        <div class="hero-content">
+          <p class="hero-eyebrow">Austin Police Department</p>
+          <h2>Rattler Nation APD Portal</h2>
+          <p>Central access for announcements, training, department references, forms, and operational resources.</p>
+          <div class="hero-meta" aria-label="Portal highlights">
+            <span>Announcements</span>
+            <span>Training Calendar</span>
+            <span>Reference Library</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="mission-section">
+        <div class="mission-left">
+          <p class="section-kicker">Department Overview</p>
+          <h2>Information and Readiness</h2>
+          <p>
+            Use this portal to review current announcements, training requirements, department references, and administrative resources before going on duty.
+          </p>
+        </div>
+
+        <div class="mission-right">
+          <div class="mission-highlight">
+            <span>01</span>
+            <strong>Review Updates</strong>
+            <small>Check announcements and priority notices.</small>
+          </div>
+          <div class="mission-highlight">
+            <span>02</span>
+            <strong>Confirm Training</strong>
+            <small>Review upcoming classes and FTO events.</small>
+          </div>
+          <div class="mission-highlight">
+            <span>03</span>
+            <strong>Access References</strong>
+            <small>Use policy, codes, forms, and procedures.</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="cards">
+        <div class="card announcements">
+          <div class="card-header">
+            <h3>Latest Announcements</h3>
+            <a href="announcements.html">View All</a>
+          </div>
+          <div id="announcements-list">
+            <p>Loading announcements...</p>
+          </div>
+        </div>
+
+        <div class="card training">
+          <div class="card-header">
+            <h3>Upcoming Training</h3>
+            <a href="training.html">Calendar</a>
+          </div>
+          <div id="homepage-training">
+            <p>Loading training...</p>
+          </div>
+        </div>
+
+        <div class="card quick-links">
+          <div class="card-header">
+            <h3>Reference Links</h3>
+          </div>
+
+          <a href="sop.html">
+            SOP Manual
+            <span>&rsaquo;</span>
+          </a>
+          <a href="cidsop.html">CID SOP Manual <span>&rsaquo;</span></a>
+          <a href="10codes.html">10 Codes <span>&rsaquo;</span></a>
+          <a href="miranda.html">Miranda Rights <span>&rsaquo;</span></a>
+          <a href="trainingprint.html">Printable Training Schedule <span>&rsaquo;</span></a>
+        </div>
+      </section>
+
+      <section class="procedure-row">
+        <div class="procedure-card">
+          <h3>10-99 Procedure</h3>
+          <p>Officer needs immediate assistance. All available units respond.</p>
+        </div>
+
+        <div class="procedure-card">
+          <h3>Signal 100</h3>
+          <p>Emergency traffic only. Clear radio unless directly involved.</p>
+        </div>
+
+        <div class="procedure-card">
+          <h3>Pursuit Reminder</h3>
+          <p>Follow pursuit policy, maintain callouts, and obey supervisor commands.</p>
+        </div>
+      </section>
+
+      <a
+        class="issue-bubble"
+        href="siteissues.html"
+        aria-label="Report a site issue"
+      >
+        <span aria-hidden="true">!</span>
+        <strong>Report site issue</strong>
+      </a>
+
+      <footer class="portal-footer">
+        <p>
+          &copy; 2026 Austin Police Department
+        </p>
+        <div class="footer-quote">
+          "Integrity &middot; Service &middot; Leadership"
+          <br />
+          <span>- Austin Police Department</span>
+        </div>
+        <p>Rattler Nation · Private FiveM roleplay community</p>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

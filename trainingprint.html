@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>APD Training Schedule</title>
+
+<link rel="stylesheet" href="style.css">
+<script src="portal-ui.js" defer></script>
+<script type="module" src="portal-bootstrap.js"></script>
+<link rel="icon" type="image/png" href="images/austin-police-patch.png">
+</head>
+
+<body>
+<div class="page-layout print-schedule-page">
+<header class="simple-header print-header">
+<div class="print-header-content">
+<img class="print-document-logo" src="images/austin-police-badge.png" alt="Austin Police Department badge">
+<div class="print-letterhead-copy">
+<p class="print-agency-name">Austin Police Department</p>
+<h1>APD Training Schedule</h1>
+</div>
+<div class="print-document-meta" aria-label="Document information">
+<div>
+<span>Prepared</span>
+<strong id="printScheduleUpdated">Pending</strong>
+</div>
+<div>
+<span>Schedule Window</span>
+<strong id="printScheduleRange">Next 180 days</strong>
+</div>
+</div>
+</div>
+</header>
+
+<section class="page-card print-toolbar-card">
+<div class="training-page-header">
+<div>
+<h2>Training Schedule Print View</h2>
+<p>Use this page for briefings, roll-call reference, or printed training notices.</p>
+</div>
+
+<div class="page-actions compact">
+<button class="submit-btn" id="printScheduleBtn" type="button">Print Schedule</button>
+<a class="back-button small" href="trainingevents.html">Full Schedule</a>
+<a class="back-button small" href="training.html">Training Center</a>
+</div>
+</div>
+</section>
+
+<section class="page-card printable-schedule-card" aria-label="Printable training schedule">
+<div class="print-schedule-title">
+<div>
+<h2>Schedule</h2>
+</div>
+</div>
+
+<div id="print-training-list" class="print-training-list">
+<div class="empty-state is-loading">
+<strong>Loading printable schedule</strong>
+<p>Pulling the latest Training and FTO Training events from the shared planner.</p>
+</div>
+</div>
+</section>
+
+<div class="page-actions">
+<a class="back-button" href="index.html">Return Home</a>
+</div>
+</div>
+
+<script type="application/json" data-portal-module="trainingprint.js"></script>
+</body>
+</html>

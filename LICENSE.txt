@@ -1,0 +1,7 @@
+Copyright (c) 2026
+
+All rights reserved.
+
+This project and all associated files are intended exclusively for private server usage.
+
+Unauthorized copying, redistribution, modification, resale, or reuse of any portion of this project is prohibited without explicit permission from the owner.

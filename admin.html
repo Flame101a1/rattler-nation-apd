@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APD Admin Console</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="portal-ui.js" defer></script>
+  <script type="application/json" data-portal-module="admin.js"></script>
+<script type="module" src="portal-bootstrap.js"></script>
+<link rel="icon" type="image/png" href="images/austin-police-patch.png">
+</head>
+<body>
+  <div class="page-layout">
+    <header class="simple-header">
+      <h1>Portal Administration</h1>
+      <p>Owner-level controls for staff access and protected portal tools.</p>
+      <div class="last-updated">Owner Access Required</div>
+    </header>
+
+    <section class="staff-access-card admin-access-card" id="adminLoginCard">
+      <div class="staff-access-copy">
+        <p class="eyebrow">Owner Access</p>
+        <h2>Owner Sign In</h2>
+        <p>Sign in with an owner-authorized account to manage protected portal access.</p>
+      </div>
+
+      <form id="adminLoginForm" class="staff-login-form">
+        <label>
+          Email
+          <input id="adminEmail" type="email" autocomplete="email" required>
+        </label>
+        <label>
+          Password
+          <input id="adminPassword" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="submit-btn" type="submit">Sign In</button>
+      </form>
+
+      <div id="adminSessionPanel" class="staff-session-panel" hidden>
+        <div>
+          <span>Signed in as owner</span>
+          <strong id="adminUserEmail">Admin User</strong>
+          <small>Full authorization management access</small>
+        </div>
+        <button class="back-button small" id="adminSignOutBtn" type="button">Sign Out</button>
+      </div>
+
+      <p class="staff-auth-status" id="adminAuthStatus" aria-live="polite"></p>
+    </section>
+
+    <section class="admin-console-grid" id="adminConsole" hidden>
+      <div class="page-card admin-panel">
+        <div class="card-header">
+          <div>
+            <h2>Authorize Staff Account</h2>
+            <p>Add or update access for an existing portal sign-in account.</p>
+          </div>
+        </div>
+
+        <p class="external-note">
+          Create the staff member's sign-in account first, then enter their account ID here. This page manages portal permissions; it does not create password accounts.
+        </p>
+
+        <form id="roleForm" class="announcement-form admin-role-form">
+          <div class="form-group span-2">
+            <label for="roleUid">Portal Account ID <span class="required">*</span></label>
+            <input id="roleUid" required>
+            <small class="field-error" data-error-for="roleUid"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="roleEmail">Email</label>
+            <input id="roleEmail" type="email" placeholder="officer@apd.portal">
+          </div>
+
+          <div class="form-group">
+            <label for="roleDisplayName">Display Name</label>
+            <input id="roleDisplayName" placeholder="Officer Name">
+          </div>
+
+          <div class="admin-role-toggles span-2">
+            <label class="planner-switch">
+              <input id="roleCalendarEditor" type="checkbox">
+              <span></span>
+              Calendar & Announcement Editor
+            </label>
+
+            <label class="planner-switch">
+              <input id="roleAdmin" type="checkbox">
+              <span></span>
+              Owner Access
+            </label>
+          </div>
+
+          <div class="form-status span-2" id="roleFormStatus" aria-live="polite"></div>
+
+          <div class="announcement-form-actions span-2">
+            <button class="back-button" id="clearRoleFormBtn" type="button">Clear</button>
+            <button class="submit-btn" type="submit">Save Authorized Account</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="page-card admin-panel">
+        <div class="card-header">
+          <div>
+            <h2>Authorized Accounts</h2>
+            <p>Current users with elevated portal permissions.</p>
+          </div>
+          <button class="back-button small" id="refreshRolesBtn" type="button">Refresh</button>
+        </div>
+
+        <div id="authorizedUsersList" class="authorized-users-list">
+          <p>Sign in as an owner to view authorized accounts.</p>
+        </div>
+      </div>
+
+      <div class="page-card admin-panel portal-log-panel span-2">
+        <div class="card-header">
+          <div>
+            <h2>Portal Activity Log</h2>
+            <p>Recent owner actions and access changes inside the portal.</p>
+          </div>
+          <span class="admin-log-note">Owner Only</span>
+        </div>
+
+        <div id="portalLogFilters" class="portal-log-filters resource-tag-filters" aria-label="Filter portal activity logs"></div>
+
+        <div id="portalLogList" class="portal-log-list">
+          <p>Sign in as an owner to view portal activity.</p>
+        </div>
+      </div>
+    </section>
+
+    <a class="back-button" href="index.html">← Return Home</a>
+  </div>
+</body>
+</html>

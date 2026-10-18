@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>APD Officer Complaint Form</title>
+
+<link rel="stylesheet" href="style.css">
+<script src="portal-ui.js" defer></script>
+
+<script type="module" src="portal-bootstrap.js"></script>
+<link rel="icon" type="image/png" href="images/austin-police-patch.png">
+</head>
+
+<body>
+
+<div class="page-layout">
+
+<header class="simple-header">
+
+<h1>Officer Complaint Portal</h1>
+
+<p>
+
+File an officer complaint anonymously or with identifying information.
+
+</p>
+<div class="last-updated">Rattler Nation · Austin Police Department</div>
+
+</header>
+
+<section class="page-card">
+
+<p class="required-text">
+
+
+
+</p>
+
+<p class="external-note">Submitting opens Google Forms in a new tab. Check that tab for confirmation that your complaint was received.</p>
+<form id="complaintForm">
+
+<div class="form-group">
+
+<label>
+
+Complaint Type
+
+<span class="required">*</span>
+
+</label>
+
+<select id="type" required>
+
+<option>Policy Violation</option>
+
+<option>Unprofessional Conduct</option>
+
+<option>Abuse of Authority</option>
+
+<option>Use of Force Concern</option>
+
+<option>Corruption / Integrity Concern</option>
+
+<option>Chain of Command Issue</option>
+
+<option>Harassment / Discrimination</option>
+
+<option>Neglect of Duty</option>
+
+<option>Other</option>
+
+</select>
+
+</div>
+
+
+<div class="form-group">
+
+<label>
+
+Officer(s) Being Reported
+
+<span class="required">*</span>
+
+</label>
+
+<input id="reported" required>
+
+</div>
+
+
+<div class="form-group">
+
+<label>
+
+Location Of Incident
+
+<span class="required">*</span>
+
+</label>
+
+<input id="location" required>
+
+</div>
+
+
+<div class="form-group">
+
+<label>
+
+Incident Details
+
+<span class="required">*</span>
+
+</label>
+
+<textarea id="details" rows="7" required></textarea>
+
+</div>
+
+
+<div class="form-group">
+
+<label>
+
+Witnesses (Optional)
+
+</label>
+
+<textarea id="witnesses" rows="4"></textarea>
+
+</div>
+
+
+<div class="form-group">
+<label for="evidence">Supporting Evidence (Optional)</label>
+<textarea id="evidence" rows="4" placeholder="Bodycam, screenshot, or CAD log links"></textarea>
+</div>
+
+<div class="form-group">
+
+<label>
+
+Severity Level
+
+<span class="required">*</span>
+
+</label>
+
+<select id="severity" required>
+
+<option>Minor Concern</option>
+
+<option>Moderate Concern</option>
+
+<option>Serious Misconduct</option>
+
+<option>Critical Incident</option>
+
+</select>
+
+</div>
+
+
+
+
+
+<div class="form-group">
+
+<label>
+
+Submit Anonymously?
+
+<span class="required">*</span>
+
+</label>
+
+<select id="anonymous" required>
+
+<option>Yes</option>
+
+<option>No</option>
+
+</select>
+
+</div>
+
+
+<div class="form-group">
+
+<label>
+
+Name / Badge (Optional, if not anonymous)
+
+</label>
+
+<input id="badge">
+
+</div>
+
+
+<button class="submit-btn">
+
+Submit Complaint
+
+</button>
+
+</form>
+
+<div id="complaintSuccess"></div>
+
+</section>
+
+<a class="back-button" href="index.html">
+
+← Return Home
+
+</a>
+
+</div>
+
+<script src="complaints.js"></script>
+
+</body>
+
+</html>

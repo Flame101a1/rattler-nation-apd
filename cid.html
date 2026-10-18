@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APD CID Case Portal</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="portal-ui.js" defer></script>
+  <script type="application/json" data-portal-module="cid.js"></script>
+<script type="module" src="portal-bootstrap.js"></script>
+<link rel="icon" type="image/png" href="images/austin-police-patch.png">
+</head>
+<body>
+  <div class="page-layout">
+    <header class="simple-header">
+      <h1>CID Case Portal</h1>
+      <p>Controlled case files, investigative narratives, evidence links, and follow-up documentation.</p>
+      <div class="last-updated">Authorized CID Access</div>
+    </header>
+
+    <section class="resource-board-shell cid-board-shell">
+      <div class="resource-board-toolbar">
+        <div>
+          <p class="eyebrow">Investigations</p>
+          <h2>Controlled Case Files</h2>
+          <p>Create, review, and maintain investigative case files with supporting narratives and evidence references.</p>
+        </div>
+        <button class="submit-btn" id="createCidCaseBtn" type="button" hidden>Create Case</button>
+      </div>
+
+      <div class="resource-board-status" aria-label="CID case status">
+        <div>
+          <span>Total Cases</span>
+          <strong id="cidCaseCount">0</strong>
+        </div>
+        <div>
+          <span>Active Filter</span>
+          <strong id="cidActiveFilter">All</strong>
+        </div>
+        <div>
+          <span>Access</span>
+          <strong>Restricted</strong>
+        </div>
+      </div>
+
+      <div class="resource-board-controls">
+        <label class="resource-search-field">
+          <span>Search Cases</span>
+          <input id="cidCaseSearch" type="search" placeholder="Search title, subject, location, plate, investigator, or status">
+        </label>
+
+        <div>
+          <span class="resource-filter-label">Filter by status</span>
+          <div id="cidCaseFilters" class="resource-tag-filters" role="group" aria-label="Filter CID case files by status"></div>
+        </div>
+      </div>
+
+      <div id="cidCasesList" class="resource-post-list cid-case-list" aria-live="polite">
+        <div class="empty-state is-loading">
+          <strong>Loading CID cases</strong>
+          <p>Checking controlled case files.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="staff-access-card cid-access-card" aria-label="CID staff access">
+      <div class="staff-access-copy">
+        <p class="eyebrow">Restricted Access</p>
+        <h2>CID Case Management</h2>
+        <p id="cidAccessSummary">Authorized investigators can create case files, link evidence, and add investigative narratives.</p>
+      </div>
+
+      <form id="cidLoginForm" class="staff-login-form">
+        <label>
+          Email
+          <input id="cidEmail" type="email" autocomplete="email" required>
+        </label>
+        <label>
+          Password
+          <input id="cidPassword" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="submit-btn" type="submit">Sign In</button>
+      </form>
+
+      <div id="cidSessionPanel" class="staff-session-panel" hidden>
+        <div>
+          <span>Signed in as</span>
+          <strong id="cidUserEmail">Staff User</strong>
+          <small id="cidRoleLabel">CID case access</small>
+        </div>
+        <button class="back-button small" id="cidSignOutBtn" type="button">Sign Out</button>
+      </div>
+
+      <p class="staff-auth-status" id="cidAuthStatus" aria-live="polite"></p>
+    </section>
+
+    <a class="back-button" href="index.html">Return Home</a>
+  </div>
+
+  <div class="planner-modal" id="cidCaseModal" aria-hidden="true">
+    <div class="planner-modal-panel resource-modal-panel cid-modal-panel" role="dialog" aria-modal="true" aria-labelledby="cidCaseModalTitle">
+      <div class="planner-modal-header">
+        <div>
+          <p class="eyebrow">CID Case File</p>
+          <h2 id="cidCaseModalTitle">New Case File</h2>
+        </div>
+        <button class="planner-close" type="button" data-close-cid-modal aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="cidCaseForm" class="announcement-form cid-case-form" novalidate>
+        <div class="cid-form-section-header span-2">
+          <span>01</span>
+          <div>
+            <strong>Case Overview</strong>
+            <p>Enter the title and current classification for the investigation.</p>
+          </div>
+        </div>
+
+        <div class="form-group span-2">
+          <label for="cidCaseSummary">Case Title</label>
+          <input id="cidCaseSummary" placeholder="Short title used in the case list.">
+        </div>
+
+        <div class="form-group">
+          <label for="cidCaseStatus">Status</label>
+          <select id="cidCaseStatus">
+            <option>Open</option>
+            <option>Awaiting Warrant Approval</option>
+            <option>Pending Review</option>
+            <option>Suspended</option>
+            <option>Closed</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="cidCasePriority">Priority</label>
+          <select id="cidCasePriority">
+            <option>Standard</option>
+            <option>Priority</option>
+            <option>Critical</option>
+          </select>
+        </div>
+
+        <div class="cid-form-section-header span-2">
+          <span>02</span>
+          <div>
+            <strong>Investigative Target</strong>
+            <p>Add the person, property, location, or vehicle connected to the case.</p>
+          </div>
+        </div>
+
+        <div class="form-group span-2">
+          <label for="cidSubjectIdentifiers">Subject or Subjects Names</label>
+          <input id="cidSubjectIdentifiers" placeholder="Primary subject, additional subjects, aliases, or known names">
+          <small class="field-error" data-error-for="cidSubjectIdentifiers"></small>
+        </div>
+
+        <div class="cid-repeatable-pair span-2">
+          <div class="form-group">
+            <label for="cidPropertyLocations">Property / House / Location</label>
+            <input id="cidPropertyLocations" placeholder="Address, house, business, landmark, or area">
+          </div>
+
+          <div class="cid-location-section">
+            <div class="cid-location-header">
+              <label>Additional Properties / Houses / Locations</label>
+              <button class="back-button small" id="addCidLocationBtn" type="button">Add Location</button>
+            </div>
+            <div id="cidLocationList" class="cid-location-list"></div>
+          </div>
+        </div>
+
+        <div class="cid-repeatable-pair span-2">
+          <div class="form-group">
+            <label for="cidVehiclePlates">Vehicle Plate(s)</label>
+            <input id="cidVehiclePlates" placeholder="Plate numbers or vehicle identifiers">
+          </div>
+
+          <div class="cid-plate-section">
+            <div class="cid-plate-header">
+              <label>Additional Vehicle Plates</label>
+              <button class="back-button small" id="addCidPlateBtn" type="button">Add Plate</button>
+            </div>
+            <div id="cidPlateList" class="cid-plate-list"></div>
+          </div>
+        </div>
+
+        <div class="cid-form-section-header span-2">
+          <span>03</span>
+          <div>
+            <strong>Assigned Investigator(s)</strong>
+            <p>List the lead investigator and any assisting investigators.</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="cidLeadInvestigator">Lead Investigator</label>
+          <input id="cidLeadInvestigator" placeholder="Detective or unit lead">
+        </div>
+
+        <div class="cid-investigator-section">
+          <div class="cid-investigator-header">
+            <label>Additional Investigators</label>
+            <button class="back-button small" id="addCidInvestigatorBtn" type="button">Add Investigator</button>
+          </div>
+          <div id="cidInvestigatorList" class="cid-investigator-list"></div>
+        </div>
+
+        <div class="cid-form-section-header span-2">
+          <span>04</span>
+          <div>
+            <strong>Narrative and Evidence</strong>
+            <p>Document the initial facts and attach supporting evidence links.</p>
+          </div>
+        </div>
+
+        <div class="form-group span-2">
+          <label for="cidCaseNarrative">Narrative <span class="required">*</span></label>
+          <textarea id="cidCaseNarrative" rows="8" required></textarea>
+          <small class="field-error" data-error-for="cidCaseNarrative"></small>
+        </div>
+
+        <div class="cid-charge-section span-2">
+          <div class="cid-charge-header">
+            <div>
+              <label>Listed Charges</label>
+              <small>Add each charge separately so the case narrative stays organized.</small>
+            </div>
+            <button class="back-button small" id="addCidChargeBtn" type="button">Add Charge</button>
+          </div>
+          <div id="cidChargeList" class="cid-charge-list"></div>
+        </div>
+
+        <div class="cid-evidence-section span-2">
+          <div class="cid-evidence-header">
+            <div>
+              <label>Evidence Links</label>
+              <small>Add image, video, document, or hosted reference links connected to this case.</small>
+            </div>
+            <div class="cid-evidence-actions">
+              <button class="back-button small cid-help-button" id="cidPhotoHelpBtn" type="button">How to upload pictures</button>
+              <button class="back-button small" id="addCidEvidenceBtn" type="button">Add Evidence</button>
+            </div>
+          </div>
+
+          <div id="cidEvidenceList" class="cid-evidence-list"></div>
+        </div>
+
+        <div class="form-status span-2" id="cidCaseFormStatus" aria-live="polite"></div>
+
+        <div class="announcement-form-actions span-2">
+          <button class="back-button" type="button" data-close-cid-modal>Cancel</button>
+          <button class="submit-btn" id="cidCaseSubmitBtn" type="submit">Create Case</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="planner-modal" id="cidPhotoHelpModal" aria-hidden="true">
+    <div class="planner-modal-panel confirm-panel cid-help-panel" role="dialog" aria-modal="true" aria-labelledby="cidPhotoHelpTitle">
+      <div class="planner-modal-header">
+        <div>
+          <p class="eyebrow">Evidence Help</p>
+          <h2 id="cidPhotoHelpTitle">How to Upload Pictures</h2>
+        </div>
+        <button class="planner-close" type="button" data-close-cid-help aria-label="Close help">&times;</button>
+      </div>
+
+      <div class="cid-help-copy">
+        <p>Use PhotoToURL to turn a picture into a link that can be attached to a CID case.</p>
+        <ol>
+          <li>Open PhotoToURL.</li>
+          <li>Upload the picture from your device.</li>
+          <li>Copy the direct image link it gives you.</li>
+          <li>Return here, choose Evidence Type as Photo, and paste the link into Evidence Link.</li>
+        </ol>
+        <a class="submit-btn resource-link-button no-external-label" href="https://phototourl.com" target="_blank" rel="noopener">Open PhotoToURL</a>
+      </div>
+
+      <div class="planner-modal-actions">
+        <button class="back-button" type="button" data-close-cid-help>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="planner-modal" id="cidCaseDetailsModal" aria-hidden="true">
+    <div class="planner-modal-panel resource-modal-panel resource-details-panel cid-details-panel" role="dialog" aria-modal="true" aria-labelledby="cidCaseDetailsTitle">
+      <div class="planner-modal-header">
+        <div>
+          <p class="eyebrow" id="cidCaseDetailsMeta">CID Case File</p>
+          <h2 id="cidCaseDetailsTitle">Case File</h2>
+        </div>
+        <button class="planner-close" type="button" data-close-cid-details aria-label="Close details">&times;</button>
+      </div>
+
+      <div id="cidCaseDetailsContent" class="resource-post-details cid-case-details"></div>
+
+      <form id="cidNarrativeForm" class="announcement-form cid-narrative-form" novalidate hidden>
+        <div class="form-group span-2">
+          <label for="cidNarrativeTitle">Narrative Title</label>
+          <input id="cidNarrativeTitle" placeholder="Follow-up Narrative">
+        </div>
+
+        <div class="form-group span-2">
+          <label for="cidNarrativeBody">Additional Narrative <span class="required">*</span></label>
+          <textarea id="cidNarrativeBody" rows="5" required></textarea>
+          <small class="field-error" data-error-for="cidNarrativeBody"></small>
+        </div>
+
+        <div class="form-status span-2" id="cidNarrativeFormStatus" aria-live="polite"></div>
+
+        <div class="announcement-form-actions span-2">
+          <button class="submit-btn" id="cidNarrativeSubmitBtn" type="submit">Add Narrative</button>
+        </div>
+      </form>
+
+      <p id="cidDeleteStatus" class="form-status cid-delete-status" role="status" aria-live="polite"></p>
+      <div class="planner-modal-actions">
+        <button class="danger-btn" id="deleteCidCaseBtn" type="button" hidden>Delete Case</button>
+        <button class="back-button" type="button" data-close-cid-details>Close</button>
+      </div>
+    </div>
+  </div>
+  <div class="planner-modal" id="cidDeleteConfirmModal" aria-hidden="true">
+    <div class="planner-modal-panel confirm-panel" role="dialog" aria-modal="true" aria-labelledby="cidDeleteConfirmTitle" aria-describedby="cidDeleteConfirmCopy">
+      <div class="planner-modal-header">
+        <div><p class="eyebrow">Confirm Action</p><h2 id="cidDeleteConfirmTitle">Delete Case?</h2></div>
+      </div>
+      <div class="confirm-copy" id="cidDeleteConfirmCopy">
+        <p>This will permanently remove <strong id="cidDeleteCaseName"></strong>, including its narratives and stored evidence links. This cannot be undone.</p>
+      </div>
+      <p class="form-status cid-delete-status" id="cidDeleteConfirmStatus" role="status" aria-live="polite"></p>
+      <div class="planner-modal-actions">
+        <button class="back-button" id="cancelCidDeleteBtn" type="button">Cancel</button>
+        <button class="danger-btn" id="confirmCidDeleteBtn" type="button">Delete Case</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

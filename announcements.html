@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>APD Announcements</title>
+
+<link rel="stylesheet" href="style.css">
+<script src="portal-ui.js" defer></script>
+<script type="application/json" data-portal-module="announcements.js"></script>
+<script type="module" src="portal-bootstrap.js"></script>
+<link rel="icon" type="image/png" href="images/austin-police-patch.png">
+</head>
+
+<body>
+
+<div class="page-layout">
+
+<header class="simple-header">
+<h1>APD Announcements</h1>
+<p>All active Austin Police Department announcements.</p>
+<div class="last-updated">Rattler Nation · Austin Police Department</div>
+</header>
+
+<section class="announcement-editor-card" id="announcementEditorCard" hidden>
+<div class="announcement-editor-header">
+<div>
+<p class="eyebrow">Staff Access</p>
+<h2>Add Announcement</h2>
+<p>Approved staff can publish department announcements to this page and the dashboard.</p>
+</div>
+</div>
+
+<form id="announcementForm" class="announcement-form">
+<div class="form-group">
+<label for="announcementTitle">Title <span class="required">*</span></label>
+<input id="announcementTitle" required>
+<small class="field-error" data-error-for="announcementTitle"></small>
+</div>
+
+<div class="form-group">
+<label for="announcementCategory">Category</label>
+<select id="announcementCategory">
+<option>General</option>
+<option>Training</option>
+<option>Command</option>
+<option>Operations</option>
+<option>Policy</option>
+<option>Urgent</option>
+</select>
+</div>
+
+<div class="form-group">
+<label for="announcementPriority">Priority</label>
+<select id="announcementPriority">
+<option>Normal</option>
+<option>Important</option>
+<option>Urgent</option>
+</select>
+</div>
+
+<div class="form-group">
+<label for="announcementAuthor">Posted By</label>
+<input id="announcementAuthor" placeholder="Command Staff">
+</div>
+
+<div class="form-group span-2">
+<label for="announcementMessage">Announcement <span class="required">*</span></label>
+<textarea id="announcementMessage" rows="4" required></textarea>
+<small class="field-error" data-error-for="announcementMessage"></small>
+</div>
+
+<div class="form-status span-2" id="announcementFormStatus" aria-live="polite"></div>
+
+<div class="announcement-form-actions span-2">
+<button class="submit-btn" type="submit">Publish Announcement</button>
+</div>
+</form>
+</section>
+
+<section class="staff-access-card announcement-access-card" aria-label="Announcement staff access">
+<div class="staff-access-copy">
+<p class="eyebrow">Editor Access</p>
+<h2>Announcement Controls</h2>
+<p id="announcementAccessSummary">Sign in with an approved staff account to add or remove announcements.</p>
+</div>
+
+<form id="announcementLoginForm" class="staff-login-form">
+<label>
+Email
+<input id="announcementEmail" type="email" autocomplete="email" required>
+</label>
+<label>
+Password
+<input id="announcementPassword" type="password" autocomplete="current-password" required>
+</label>
+<button class="submit-btn" type="submit">Sign In</button>
+</form>
+
+<div id="announcementSessionPanel" class="staff-session-panel" hidden>
+<div>
+<span>Signed in as</span>
+<strong id="announcementUserEmail">Staff User</strong>
+<small id="announcementRoleLabel">Announcement editor access</small>
+</div>
+<button class="back-button small" id="announcementSignOutBtn" type="button">Sign Out</button>
+</div>
+
+<p class="staff-auth-status" id="announcementAuthStatus" aria-live="polite"></p>
+</section>
+
+<section class="page-card">
+<div class="card-header">
+<h2>📢 Active Announcements</h2>
+</div>
+
+<div id="all-announcements-list">
+<p>Loading announcements...</p>
+</div>
+</section>
+
+<a class="back-button" href="index.html">← Return Home</a>
+
+</div>
+
+</body>
+</html>

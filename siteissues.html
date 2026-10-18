@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APD Site Issue Report</title>
+  <link rel="icon" type="image/png" href="images/austin-police-patch.png" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="portal-ui.js" defer></script>
+<script type="module" src="portal-bootstrap.js"></script>
+</head>
+<body>
+  <div class="page-layout">
+    <header class="simple-header">
+      <h1>Report Site Issue</h1>
+      <p>
+        Report broken links, display problems, missing information, or anything else that is not working correctly on the portal.
+      </p>
+      <div class="last-updated">Rattler Nation · Austin Police Department</div>
+    </header>
+
+    <section class="page-card">
+      <p class="external-note">Submitting opens Google Forms in a new tab. Check that tab for confirmation that your report was received.</p>
+      <form id="siteIssueForm">
+        <div class="form-group">
+          <label>
+            Your Name (Optional)
+          </label>
+          <input id="reporterName" placeholder="Your Name If You Would Like To Put It" />
+        </div>
+
+        <div class="form-group">
+          <label>
+            Discord Username (Required)
+            <span class="required">*</span>
+          </label>
+          <input id="discordUsername" placeholder="Your Discord username" required />
+        </div>
+
+        <fieldset class="form-group radio-group">
+          <legend>
+            Issue Type (Required)
+            <span class="required">*</span>
+          </legend>
+          <label><input type="radio" name="issueType" value="Bug / Error" required /> Bug / Error</label>
+          <label><input type="radio" name="issueType" value="Broken Link" /> Broken Link</label>
+          <label><input type="radio" name="issueType" value="Page Not Loading" /> Page Not Loading</label>
+          <label><input type="radio" name="issueType" value="Missing Information" /> Missing Information</label>
+          <label><input type="radio" name="issueType" value="Incorrect Information" /> Incorrect Information</label>
+          <label><input type="radio" name="issueType" value="Feature Not Working" /> Feature Not Working</label>
+          <label><input type="radio" name="issueType" value="Login / Authentication Issue" /> Login / Authentication Issue</label>
+          <label><input type="radio" name="issueType" value="Formatting / Display Issue" /> Formatting / Display Issue</label>
+          <label><input type="radio" name="issueType" value="Performance / Slow Loading" /> Performance / Slow Loading</label>
+          <label><input type="radio" name="issueType" value="Image or Media Issue" /> Image or Media Issue</label>
+          <label><input type="radio" name="issueType" value="Search Function Issue" /> Search Function Issue</label>
+          <label><input type="radio" name="issueType" value="Permission / Access Issue" /> Permission / Access Issue</label>
+          <label><input type="radio" name="issueType" value="Other" /> Other</label>
+        </fieldset>
+
+        <div class="form-group">
+          <label>
+            Affected Page or Section (Required)
+            <span class="required">*</span>
+          </label>
+          <input id="issuePage" placeholder="What Page Did This Occur" required />
+        </div>
+
+        <div class="form-group">
+          <label>
+            Detailed Description of the Issue (Required)
+            <span class="required">*</span>
+          </label>
+          <textarea id="issueDescription" rows="5" placeholder="Detailed Description" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>
+            Steps to Reproduce the Problem (Required)
+            <span class="required">*</span>
+          </label>
+          <textarea id="issueSteps" rows="5" placeholder="Steps" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>
+            Screenshot Link(s) (Optional)
+          </label>
+          <textarea id="issueScreenshotLinks" rows="3" placeholder="Paste screenshot links, one per line"></textarea>
+          <p class="field-note">Upload screenshots to your preferred image host, then paste the shareable links here.</p>
+        </div>
+
+        <button class="submit-btn">Submit Site Issue</button>
+      </form>
+
+      <div id="siteIssueSuccess"></div>
+    </section>
+
+    <a class="back-button" href="index.html">Return Home</a>
+  </div>
+
+  <script src="siteissues.js"></script>
+</body>
+</html>

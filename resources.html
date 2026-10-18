@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APD Officer Resources</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="portal-ui.js" defer></script>
+  <script type="application/json" data-portal-module="resources.js"></script>
+<script type="module" src="portal-bootstrap.js"></script>
+<link rel="icon" type="image/png" href="images/austin-police-patch.png">
+</head>
+<body>
+  <div class="page-layout">
+    <header class="simple-header">
+      <h1>Officer Resources</h1>
+      <p>Official department posts, reference material, document links, and procedural guidance.</p>
+      <div class="last-updated">Officer Reference Center</div>
+    </header>
+
+    <section class="resource-board-shell">
+      <div class="resource-board-toolbar">
+        <div>
+          <p class="eyebrow">Official Posts</p>
+          <h2>Department Resource Posts</h2>
+          <p>Published guidance, document links, and how-to material for department personnel.</p>
+        </div>
+        <button class="submit-btn" id="createResourcePostBtn" type="button" hidden>Create Post</button>
+      </div>
+
+      <div class="resource-board-status" aria-label="Officer resources status">
+        <div>
+          <span>Published Posts</span>
+          <strong id="resourcePostCount">0</strong>
+        </div>
+        <div>
+          <span>Active Filter</span>
+          <strong id="resourceActiveFilter">All</strong>
+        </div>
+        <div>
+          <span>Access</span>
+          <strong>Read Only</strong>
+        </div>
+      </div>
+
+      <div class="resource-board-controls">
+        <label class="resource-search-field">
+          <span>Search Posts</span>
+          <input id="resourcePostSearch" type="search" placeholder="Search title, summary, author, or content">
+        </label>
+
+        <div>
+          <span class="resource-filter-label">Filter by tag</span>
+          <div id="resourceTagFilters" class="resource-tag-filters" role="group" aria-label="Filter Officer Resources posts by tag"></div>
+        </div>
+      </div>
+
+      <div id="resourcePostsList" class="resource-post-list" aria-live="polite">
+        <div class="empty-state is-loading">
+          <strong>Loading Officer Resources</strong>
+          <p>Checking the shared officer resources library.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="staff-access-card resource-access-card" aria-label="Officer resources staff access">
+      <div class="staff-access-copy">
+        <p class="eyebrow">Editor Access</p>
+        <h2>Publishing Access</h2>
+        <p id="resourceAccessSummary">Authorized staff can publish and remove official Officer Resources posts.</p>
+      </div>
+
+      <form id="resourceLoginForm" class="staff-login-form">
+        <label>
+          Email
+          <input id="resourceEmail" type="email" autocomplete="email" required>
+        </label>
+        <label>
+          Password
+          <input id="resourcePassword" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="submit-btn" type="submit">Sign In</button>
+      </form>
+
+      <div id="resourceSessionPanel" class="staff-session-panel" hidden>
+        <div>
+          <span>Signed in as</span>
+          <strong id="resourceUserEmail">Staff User</strong>
+          <small id="resourceRoleLabel">Officer Resources editor access</small>
+        </div>
+        <button class="back-button small" id="resourceSignOutBtn" type="button">Sign Out</button>
+      </div>
+
+      <p class="staff-auth-status" id="resourceAuthStatus" aria-live="polite"></p>
+    </section>
+
+    <a class="back-button" href="index.html">Return Home</a>
+  </div>
+
+  <div class="planner-modal" id="resourcePostModal" aria-hidden="true">
+    <div class="planner-modal-panel resource-modal-panel" role="dialog" aria-modal="true" aria-labelledby="resourcePostModalTitle">
+      <div class="planner-modal-header">
+        <div>
+          <p class="eyebrow">Officer Resources</p>
+          <h2 id="resourcePostModalTitle">Create Post</h2>
+        </div>
+        <button class="planner-close" type="button" data-close-resource-modal aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="resourcePostForm" class="announcement-form resource-post-form" novalidate>
+        <div class="form-group span-2">
+          <label for="resourcePostTitle">Post Title <span class="required">*</span></label>
+          <input id="resourcePostTitle" required>
+          <small class="field-error" data-error-for="resourcePostTitle"></small>
+        </div>
+
+        <div class="form-group">
+          <label for="resourcePostCategory">Category</label>
+          <select id="resourcePostCategory">
+            <option>General</option>
+            <option>How-To</option>
+            <option>Document</option>
+            <option>Training</option>
+            <option>Policy</option>
+            <option>Reference</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="resourcePostAuthor">Posted By</label>
+          <input id="resourcePostAuthor" placeholder="Command Staff">
+        </div>
+
+        <div class="form-group span-2">
+          <label for="resourcePostSummary">Short Summary</label>
+          <input id="resourcePostSummary" placeholder="Briefly describe what this resource covers.">
+        </div>
+
+        <div class="form-group span-2">
+          <label for="resourcePostContent">Post Details <span class="required">*</span></label>
+          <textarea id="resourcePostContent" rows="7" required></textarea>
+          <small class="field-error" data-error-for="resourcePostContent"></small>
+        </div>
+
+        <div class="form-group span-2">
+          <label for="resourcePostLink">Optional Document or Resource Link</label>
+          <input id="resourcePostLink" type="url" placeholder="https://">
+          <small class="field-error" data-error-for="resourcePostLink"></small>
+        </div>
+
+        <div class="form-status span-2" id="resourcePostFormStatus" aria-live="polite"></div>
+
+        <div class="announcement-form-actions span-2">
+          <button class="back-button" type="button" data-close-resource-modal>Cancel</button>
+          <button class="submit-btn" type="submit">Publish Post</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="planner-modal" id="resourcePostDetailsModal" aria-hidden="true">
+    <div class="planner-modal-panel resource-modal-panel resource-details-panel" role="dialog" aria-modal="true" aria-labelledby="resourcePostDetailsTitle">
+      <div class="planner-modal-header">
+        <div>
+          <p class="eyebrow" id="resourcePostDetailsCategory">Officer Resources</p>
+          <h2 id="resourcePostDetailsTitle">Officer Resources Post</h2>
+        </div>
+        <button class="planner-close" type="button" data-close-resource-details aria-label="Close details">&times;</button>
+      </div>
+
+      <div id="resourcePostDetailsContent" class="resource-post-details"></div>
+
+      <div class="planner-modal-actions">
+        <button class="back-button" type="button" data-close-resource-details>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="planner-modal" id="resourceDeleteConfirmModal" aria-hidden="true">
+    <div class="planner-modal-panel confirm-panel resource-confirm-panel" role="dialog" aria-modal="true" aria-labelledby="resourceDeleteConfirmTitle">
+      <div class="planner-modal-header">
+        <div>
+          <p class="eyebrow">Confirm Removal</p>
+          <h2 id="resourceDeleteConfirmTitle">Remove Officer Resources Post?</h2>
+        </div>
+      </div>
+
+      <p class="confirm-copy">This will permanently remove the selected post from Officer Resources.</p>
+      <p class="resource-delete-title" id="resourceDeletePostTitle"></p>
+
+      <div class="planner-modal-actions">
+        <button class="back-button" id="cancelResourceDeleteBtn" type="button">Cancel</button>
+        <button class="danger-btn" id="confirmResourceDeleteBtn" type="button">Remove Post</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

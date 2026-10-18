@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APD Training Center</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="portal-ui.js" defer></script>
+  <script type="application/json" data-portal-module="training-planner.js"></script>
+  <script type="application/json" data-portal-module="training-reference.js"></script>
+<script type="module" src="portal-bootstrap.js"></script>
+<link rel="icon" type="image/png" href="images/austin-police-patch.png">
+</head>
+<body>
+  <div class="page-layout">
+    <header class="simple-header">
+      <h1>APD Training Center</h1>
+      <p>Department training calendar, field training resources, and certification support for APD staff.</p>
+      <div class="last-updated">Rattler Nation · Austin Police Department</div>
+    </header>
+
+    <section class="planner-overview" aria-label="Training planner overview">
+      <div class="planner-stat">
+        <span>Upcoming Training</span>
+        <strong id="statTraining">0</strong>
+      </div>
+      <div class="planner-stat">
+        <span>Department Events</span>
+        <strong id="statDepartment">0</strong>
+      </div>
+      <div class="planner-stat">
+        <span>Events This Week</span>
+        <strong id="statWeek">0</strong>
+      </div>
+      <div class="planner-stat next-event">
+        <span>Next Scheduled Event</span>
+        <strong id="statNextEvent">None scheduled</strong>
+      </div>
+    </section>
+
+    <section class="calendar-planner page-card">
+      <div class="planner-header">
+        <div>
+          <p class="eyebrow">Calendar & Planner</p>
+          <h2>Department Schedule</h2>
+          <p>Plan and review training, FTO sessions, meetings, operations, court dates, deadlines, and command staff events.</p>
+        </div>
+
+        <button class="submit-btn planner-create" id="createEventBtn" type="button">+ Create Event</button>
+      </div>
+
+      <div class="planner-toolbar" aria-label="Calendar controls">
+        <div class="planner-nav-group">
+          <button class="planner-icon-btn" id="calendarPrev" type="button" aria-label="Previous period">&lsaquo;</button>
+          <button class="back-button small" id="calendarToday" type="button">Today</button>
+          <button class="planner-icon-btn" id="calendarNext" type="button" aria-label="Next period">&rsaquo;</button>
+        </div>
+
+        <h3 id="calendarTitle">Calendar</h3>
+
+        <div class="planner-view-toggle" role="group" aria-label="Calendar view">
+          <button class="active" data-view="month" type="button">Month</button>
+          <button data-view="week" type="button">Week</button>
+          <button data-view="day" type="button">Day</button>
+        </div>
+      </div>
+
+      <div id="calendarSurface" class="calendar-surface" aria-live="polite"></div>
+    </section>
+
+    <section class="staff-access-card" aria-label="Staff calendar access">
+      <div class="staff-access-copy">
+        <p class="eyebrow">Staff Access</p>
+        <h2>Calendar Editor Login</h2>
+        <p id="staffAccessSummary">Sign in with an approved staff account to create, edit, and delete calendar events.</p>
+      </div>
+
+      <form id="staffLoginForm" class="staff-login-form">
+        <label>
+          Email
+          <input id="staffEmail" type="email" autocomplete="email" required>
+        </label>
+        <label>
+          Password
+          <input id="staffPassword" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="submit-btn" type="submit">Sign In</button>
+      </form>
+
+      <div id="staffSessionPanel" class="staff-session-panel" hidden>
+        <div>
+          <span>Signed in as</span>
+          <strong id="staffUserEmail">Staff User</strong>
+          <small id="staffRoleLabel">Calendar access pending</small>
+        </div>
+        <button class="back-button small" id="staffSignOutBtn" type="button">Sign Out</button>
+      </div>
+
+      <p class="staff-auth-status" id="staffAuthStatus" aria-live="polite"></p>
+    </section>
+
+    <section class="resource-board-shell training-reference-board" id="training-reference-library">
+      <div class="resource-board-toolbar">
+        <div>
+          <p class="eyebrow">Training Resource</p>
+          <h2>Training Reference Library</h2>
+          <p>Training notices, preparation material, document links, and information officers should review before attending scheduled training.</p>
+        </div>
+        <button class="submit-btn" id="createTrainingReferenceBtn" type="button" hidden>Create Post</button>
+      </div>
+
+      <div class="resource-board-status" aria-label="Training reference library status">
+        <div>
+          <span>Published Posts</span>
+          <strong id="trainingReferenceCount">0</strong>
+        </div>
+        <div>
+          <span>Active Filter</span>
+          <strong id="trainingReferenceActiveFilter">All</strong>
+        </div>
+        <div>
+          <span>Access</span>
+          <strong>Read Only</strong>
+        </div>
+      </div>
+
+      <div class="resource-board-controls">
+        <label class="resource-search-field">
+          <span>Search Training References</span>
+          <input id="trainingReferenceSearch" type="search" placeholder="Search title, summary, author, or content">
+        </label>
+
+        <div>
+          <span class="resource-filter-label">Filter by tag</span>
+          <div id="trainingReferenceFilters" class="resource-tag-filters" role="group" aria-label="Filter training reference posts by tag"></div>
+        </div>
+      </div>
+
+      <div id="trainingReferenceList" class="resource-post-list" aria-live="polite">
+        <div class="empty-state is-loading">
+          <strong>Loading Training References</strong>
+          <p>Checking the shared training reference library.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="page-actions" aria-label="Training page actions">
+      <a class="back-button" href="trainingevents.html">View Full Schedule</a>
+      <a class="back-button" href="trainingprint.html">Printable Schedule</a>
+      <a class="back-button" href="index.html">Return Home</a>
+    </div>
+  </div>
+
+  <div class="planner-modal" id="trainingReferenceModal" aria-hidden="true">
+    <div class="planner-modal-panel resource-modal-panel" role="dialog" aria-modal="true" aria-labelledby="trainingReferenceModalTitle">
+      <div class="planner-modal-header">
+        <div>
+          <p class="eyebrow">Training Reference Library</p>
+          <h2 id="trainingReferenceModalTitle">Create Post</h2>
+        </div>
+        <button class="planner-close" type="button" data-close-training-reference-modal aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="trainingReferenceForm" class="announcement-form resource-post-form" novalidate>
+        <div class="form-group span-2">
+          <label for="trainingReferenceTitle">Post Title <span class="required">*</span></label>
+          <input id="trainingReferenceTitle" required>
+          <small class="field-error" data-error-for="trainingReferenceTitle"></small>
+        </div>
+
+        <div class="form-group">
+          <label for="trainingReferenceCategory">Category</label>
+          <select id="trainingReferenceCategory">
+            <option>General</option>
+            <option>Required Reading</option>
+            <option>How-To</option>
+            <option>Document</option>
+            <option>FTO</option>
+            <option>Policy</option>
+            <option>Reference</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="trainingReferenceAuthor">Posted By</label>
+          <input id="trainingReferenceAuthor" placeholder="Training Staff">
+        </div>
+
+        <div class="form-group span-2">
+          <label for="trainingReferenceSummary">Short Summary</label>
+          <input id="trainingReferenceSummary" placeholder="Briefly describe what officers should know before training.">
+        </div>
+
+        <div class="form-group span-2">
+          <label for="trainingReferenceContent">Post Details <span class="required">*</span></label>
+          <textarea id="trainingReferenceContent" rows="7" required></textarea>
+          <small class="field-error" data-error-for="trainingReferenceContent"></small>
+        </div>
+
+        <div class="form-group span-2">
+          <label for="trainingReferenceLink">Optional Document or Resource Link</label>
+          <input id="trainingReferenceLink" type="url" placeholder="https://">
+          <small class="field-error" data-error-for="trainingReferenceLink"></small>
+        </div>
+
+        <div class="form-status span-2" id="trainingReferenceFormStatus" aria-live="polite"></div>
+
+        <div class="announcement-form-actions span-2">
+          <button class="back-button" type="button" data-close-training-reference-modal>Cancel</button>
+          <button class="submit-btn" type="submit">Publish Post</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="planner-modal" id="trainingReferenceDetailsModal" aria-hidden="true">
+    <div class="planner-modal-panel resource-modal-panel resource-details-panel" role="dialog" aria-modal="true" aria-labelledby="trainingReferenceDetailsTitle">
+      <div class="planner-modal-header">
+        <div>
+          <p class="eyebrow" id="trainingReferenceDetailsCategory">Training Reference Library</p>
+          <h2 id="trainingReferenceDetailsTitle">Training Reference Post</h2>
+        </div>
+        <button class="planner-close" type="button" data-close-training-reference-details aria-label="Close details">&times;</button>
+      </div>
+
+      <div id="trainingReferenceDetailsContent" class="resource-post-details"></div>
+
+      <div class="planner-modal-actions">
+        <button class="back-button" type="button" data-close-training-reference-details>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="planner-modal" id="trainingReferenceDeleteModal" aria-hidden="true">
+    <div class="planner-modal-panel confirm-panel resource-confirm-panel" role="dialog" aria-modal="true" aria-labelledby="trainingReferenceDeleteTitle">
+      <div class="planner-modal-header">
+        <div>
+          <p class="eyebrow">Confirm Removal</p>
+          <h2 id="trainingReferenceDeleteTitle">Remove Training Reference Post?</h2>
+        </div>
+      </div>
+
+      <p class="confirm-copy">This will permanently remove the selected post from the Training Reference Library.</p>
+      <p class="resource-delete-title" id="trainingReferenceDeletePostTitle"></p>
+
+      <div class="planner-modal-actions">
+        <button class="back-button" id="cancelTrainingReferenceDeleteBtn" type="button">Cancel</button>
+        <button class="danger-btn" id="confirmTrainingReferenceDeleteBtn" type="button">Remove Post</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="planner-modal" id="eventModal" aria-hidden="true">
+    <div class="planner-modal-panel" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle">
+      <div class="planner-modal-header">
+        <div>
+          <p class="eyebrow">Event Information</p>
+          <h2 id="eventModalTitle">Create Event</h2>
+        </div>
+        <button class="planner-close" type="button" data-close-modal aria-label="Close modal">×</button>
+      </div>
+
+      <form id="eventForm" class="planner-form" novalidate>
+        <input type="hidden" id="eventId">
+
+        <div class="planner-form-grid">
+          <div class="form-group span-2">
+            <label for="eventTitle">Event Title <span class="required">*</span></label>
+            <input id="eventTitle" required>
+            <small class="field-error" data-error-for="eventTitle"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="eventType">Event Type <span class="required">*</span></label>
+            <select id="eventType" required>
+              <option value="">Select type</option>
+              <option>Department Event</option>
+              <option>Training</option>
+              <option>Meeting</option>
+              <option>Patrol Operation</option>
+              <option>Special Operation</option>
+              <option>Interview</option>
+              <option>Deadline</option>
+              <option>Court</option>
+              <option>FTO Training</option>
+              <option>Command Staff</option>
+              <option>Other</option>
+            </select>
+            <small class="field-error" data-error-for="eventType"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="eventDate">Date <span class="required">*</span></label>
+            <input id="eventDate" type="date" required>
+            <small class="field-error" data-error-for="eventDate"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="eventStart">Start Time</label>
+            <input id="eventStart" type="time">
+            <small class="field-error" data-error-for="eventStart"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="eventEnd">End Time</label>
+            <input id="eventEnd" type="time">
+            <small class="field-error" data-error-for="eventEnd"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="eventLocation">Location</label>
+            <input id="eventLocation">
+          </div>
+
+          <div class="form-group">
+            <label for="eventOrganizer">Organizer</label>
+            <input id="eventOrganizer">
+          </div>
+
+          <div class="form-group">
+            <label for="eventGroup">Required Rank / Group</label>
+            <input id="eventGroup">
+          </div>
+
+          <div class="form-group">
+            <label for="eventColor">Event Color / Category</label>
+            <select id="eventColor">
+              <option value="blue">Blue</option>
+              <option value="gold">Gold</option>
+              <option value="green">Green</option>
+              <option value="red">Red</option>
+              <option value="purple">Purple</option>
+              <option value="gray">Gray</option>
+            </select>
+          </div>
+
+          <div class="form-group span-2">
+            <label for="eventDescription">Description</label>
+            <textarea id="eventDescription" rows="4"></textarea>
+          </div>
+
+          <div class="form-group span-2">
+            <label for="eventNotes">Optional Notes</label>
+            <textarea id="eventNotes" rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="planner-switch-row">
+          <label class="planner-switch">
+            <input id="eventAllDay" type="checkbox">
+            <span></span>
+            All Day
+          </label>
+
+          <label class="planner-switch">
+            <input id="eventRecurring" type="checkbox">
+            <span></span>
+            Recurring Event
+          </label>
+        </div>
+
+        <div class="recurrence-panel" id="recurrencePanel" hidden>
+          <div class="form-group">
+            <label for="eventRecurrence">Repeat</label>
+            <select id="eventRecurrence">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="eventRecurrenceEnd">Recurrence End Date</label>
+            <input id="eventRecurrenceEnd" type="date">
+            <small class="field-error" data-error-for="eventRecurrenceEnd"></small>
+          </div>
+        </div>
+
+        <div class="form-status" id="eventFormStatus" aria-live="polite"></div>
+
+        <div class="planner-modal-actions">
+          <button class="back-button" type="button" data-close-modal>Cancel</button>
+          <button class="submit-btn" type="submit">Save Event</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="planner-modal" id="detailsModal" aria-hidden="true">
+    <div class="planner-modal-panel details-panel" role="dialog" aria-modal="true" aria-labelledby="detailsTitle">
+      <div class="planner-modal-header">
+        <div>
+          <p class="eyebrow">Event Details</p>
+          <h2 id="detailsTitle">Event Details</h2>
+        </div>
+        <button class="planner-close" type="button" data-close-details aria-label="Close details">×</button>
+      </div>
+
+      <div id="eventDetailsContent" class="event-details-content"></div>
+
+      <div class="planner-modal-actions details-actions">
+        <button class="back-button" type="button" data-close-details>Close</button>
+        <button class="back-button" id="editEventBtn" type="button">Edit Event</button>
+        <button class="danger-btn" id="deleteEventBtn" type="button">Delete Event</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="planner-modal" id="confirmModal" aria-hidden="true">
+    <div class="planner-modal-panel confirm-panel" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <div class="planner-modal-header">
+        <div>
+          <p class="eyebrow">Confirm Action</p>
+          <h2 id="confirmTitle">Delete Event?</h2>
+        </div>
+      </div>
+
+      <p class="confirm-copy">This will permanently remove the event from this planner.</p>
+
+      <div class="planner-modal-actions">
+        <button class="back-button" id="cancelDeleteBtn" type="button">Cancel</button>
+        <button class="danger-btn" id="confirmDeleteBtn" type="button">Delete Event</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
