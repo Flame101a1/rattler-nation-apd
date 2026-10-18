@@ -22,6 +22,8 @@
 
   const pages = [
     ["Dashboard", "index.html", "", "Main"],
+    ["Announcements", "announcements.html", "", "Main"],
+    ["Gallery", "gallery.html", "", "Main"],
     ["Officer Resources", "resources.html", "", "Main"],
     ["CID Portal", "cid.html", "", "Main"],
     ["Training", "training.html", "", "Main"],
@@ -29,6 +31,10 @@
     ["SOP", "sop.html", "", "Reference"],
     ["CID SOP", "cidsop.html", "", "Reference"],
     ["Penal Codes", "penalcodes.html", "", "Reference"],
+    ["Chain of Command", "chainofcommand.html", "", "Reference"],
+    ["10 Codes", "10codes.html", "", "Reference"],
+    ["Miranda Rights", "miranda.html", "", "Reference"],
+    ["Equipment", "equipment.html", "", "Reference"],
     ["Warrants", "warrantform.html", "", "Forms"],
     ["Complaints", "complaints.html", "", "Forms"],
     ["Suggestions", "suggestions.html", "", "Forms"],
