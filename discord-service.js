@@ -1,4 +1,4 @@
-import { collection, doc, onSnapshot, query, where, limit, serverTimestamp, writeBatch, setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { collection, doc, onSnapshot, query, where, orderBy, limit, serverTimestamp, writeBatch, setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
 export function addDeliveryJob(batch, logRef, entry){
   const ref=doc(collection(db,"discordJobs"));
@@ -25,3 +25,5 @@ export async function createLinkCode(){
   await setDoc(doc(db,"discordLinkCodes",hash),{uid:auth.currentUser.uid,createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+5*60*1000),used:false});
   return code;
 }
+
+export function watchAllDeliveries(onJobs,onError){return onSnapshot(query(collection(db,"discordJobs"),orderBy("createdAt","desc"),limit(100)),s=>onJobs(s.docs.map(d=>({id:d.id,...d.data()}))),onError);}

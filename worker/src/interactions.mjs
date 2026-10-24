@@ -1,6 +1,6 @@
 import {equal} from './firebase.mjs';
 import {officer,setupPlan,SITE,safeUrl,ranks} from './policy.mjs';
-import {audit,synchronizeOfficer} from './workflows.mjs';
+import {audit,synchronizeOfficer,registerAttendance} from './workflows.mjs';
 const now=()=>new Date();
 const hash=async s=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s))),x=>x.toString(16).padStart(2,'0')).join('');
 export const commands=[
@@ -41,7 +41,7 @@ export async function handleInteraction(store,discord,interaction){
  if(!officer(identity.role))throw Error('Link an approved website account with /link first.');
  if(id?.startsWith('attend:')||id?.startsWith('unable:')){
   const eventId=id.split(':')[1],event=await store.get('calendarEvents/'+eventId);if(!event)throw Error('This event no longer exists.');
-  const status=id.startsWith('attend:')?'attending':'unable';await store.set('trainingAttendance/'+eventId+'_'+identity.uid,{eventId,uid:identity.uid,status,updatedAt:now()});return 'Your attendance response is saved: '+status+'.';
+  const status=id.startsWith('attend:')?'attending':'unable';await registerAttendance(store,eventId,identity.uid,status);return 'Your attendance response is saved: '+status+'.';
  }
  if(id==='approve-server-layout'){
   if(!identity.role.admin)throw Error('Owner access required.');
@@ -72,6 +72,6 @@ export async function handleInteraction(store,discord,interaction){
  }
  if(name==='officer'){const r=await store.get('officerRecords/'+identity.uid);return r?[r.name,r.rank,r.callsign,r.badge,r.division,r.status].filter(Boolean).join(' • '):'Your officer profile has not been entered by command staff.';}
  if(name==='warrant')return 'Use the existing warrant templates: '+SITE+'warrantform.html\nSubmit and track a private review at '+SITE+'officer.html';
- if(name==='botstatus')return 'Serverless HTTP integration is responding. Scheduled jobs run once per minute, subject to free quotas. Automatic membership reconciliation: '+(discord.env.RECONCILE_MEMBERS==='true'?'periodic, not instantaneous':'disabled; use /sync for onboarding');
+ if(name==='botstatus'){const config=await store.get('discordConfig/main');return 'Serverless HTTP integration is responding. Scheduled jobs run once per minute, subject to free quotas. Automatic membership reconciliation: '+((config?.reconcileMembers??(discord.env.RECONCILE_MEMBERS==='true'))?'periodic, not instantaneous':'disabled; use /sync for onboarding');}
  return 'Commands: /link, /announce (owners), /training, /roster, /officer, /warrant, /sync, /setup (owners), /botstatus, /help.';
 }

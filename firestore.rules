@@ -66,7 +66,7 @@ service cloud.firestore {
   match /botStatus/{id} {allow read: if officer();allow write: if false;}
   match /officerRecords/{uid} {
    allow read: if officer();
-   allow create,update: if admin() && recent() && uid!=request.auth.uid && request.resource.data.keys().hasOnly(['name','badge','callsign','rank','division','status','specialAssignments','trainingStatus','updatedAt','updatedBy']) && request.resource.data.updatedBy==request.auth.uid && str(request.resource.data,'name',150) && str(request.resource.data,'rank',60);
+   allow create,update: if admin() && recent() && uid!=request.auth.uid && request.resource.data.keys().hasOnly(['name','badge','callsign','rank','division','status','specialAssignments','trainingStatus','updatedAt','updatedBy']) && request.resource.data.updatedBy==request.auth.uid && str(request.resource.data,'name',150) && str(request.resource.data,'rank',60) && str(request.resource.data,'trainingStatus',500) && request.resource.data.get('specialAssignments',[]) is list && request.resource.data.get('specialAssignments',[]).size()<=6;
    allow delete: if false;
   }
   function validSubmission(d){return officer() && d.ownerUid==request.auth.uid && d.status=='Submitted' && d.createdAt==request.time && d.keys().hasOnly(['ownerUid','type','status','createdAt','warrantType','incidentDate','incidentReference','involvedOfficers','links','notes','anonymous']) && str(d,'notes',4000) && str(d,'involvedOfficers',1000) && str(d,'incidentReference',100) && d.links is list && d.links.size()<=10;}
@@ -79,6 +79,7 @@ service cloud.firestore {
    allow update: if editor() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','reviewedBy','updatedAt']) && request.resource.data.status in ['attending','unable','passed','failed','absent','excused'] && request.resource.data.reviewedBy==request.auth.uid;
    allow create,delete: if false;
   }
+  match /securityStatus/{id} {allow read: if admin();allow write: if false;}
   match /securityAudit/{id} {allow read: if admin();allow write: if false;}
   match /{document=**} {allow read,write: if false;}
  }

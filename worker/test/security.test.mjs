@@ -2,7 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {authorized,roleMentions,announcementPayload,safeUrl,setupPlan,redact} from '../src/policy.mjs';
 import {encodeValue,decodeValue,Store} from '../src/firebase.mjs';
 import {Discord} from '../src/discord.mjs';
-import {processJob,sendOnce,privateDestination,eventTime,publishScheduled} from '../src/workflows.mjs';
+import {processJob,sendOnce,privateDestination,eventTime,publishScheduled,arrangeRankRoles,validateMembershipRole,registerAttendance} from '../src/workflows.mjs';
 import worker from '../src/index.mjs';
 class MemoryStore{
  constructor(records={}){this.records=new Map(Object.entries(records).map(([k,v])=>[k,{...v,_updateTime:'v1'}]));this.writes=[];}
@@ -46,3 +46,10 @@ test('private submission validates links on backend even if browser was bypassed
 test('reviewers cannot approve their own submissions',async()=>{const s=new MemoryStore({'userRoles/u':{reviewer:true},'warrantSubmissions/w':{ownerUid:'u'}});await assert.rejects(()=>processJob(s,discord(),{id:'j',kind:'review',actorUid:'u',payload:{type:'warrant',id:'w',status:'Approved'}},{}));assert.equal(s.writes.length,0);});
 test('membership role cannot be configured to everyone',async()=>{const s=new MemoryStore({'userRoles/u':{admin:true}}),d=discord();d.api=async()=>[{id:d.env.DISCORD_GUILD_ID}];await assert.rejects(()=>processJob(s,d,{kind:'configure',actorUid:'u',payload:{apdRoleId:d.env.DISCORD_GUILD_ID}},{}));assert.equal(s.writes.length,0);});
 test('rank synchronization advances a persistent document cursor',async()=>{const s=new MemoryStore({'userRoles/u':{admin:true}});let args;s.list=async(...a)=>{args=a;return [{id:'nextOfficer'}];};const result=await processJob(s,discord(),{kind:'syncRoles',actorUid:'u',syncAfter:'previousOfficer'},{});assert.equal(args[3],'previousOfficer');assert.equal(result.syncAfter,'nextOfficer');assert.equal(result.continue,true);});
+
+test('rank hierarchy places Chief above Cadet and leaves unmanaged roles untouched',async()=>{const d=discord();await arrangeRankRoles(d,{roles:{APD:'111111111111111112',Cadet:'111111111111111113','Chief of Police':'111111111111111114'}});const body=d.calls[0].body;assert(body.find(r=>r.id==='111111111111111114').position>body.find(r=>r.id==='111111111111111113').position);assert.equal(body.length,3);});
+
+test('automatic membership cannot use a privileged rank or private-access role',async()=>{const d=discord(),id='222222222222222222';d.api=async path=>path.endsWith('/roles')?[{id,permissions:'0'}]:[{id:'333333333333333333',permission_overwrites:[{id,allow:'1024'}]}];await assert.rejects(()=>validateMembershipRole(d,{apdRoleId:id,roles:{Sergeant:id}}));await assert.rejects(()=>validateMembershipRole(d,{apdRoleId:id,channels:{'cid-case-updates':'333333333333333333'}}));});
+
+test('Firestore paths reject traversal, encoded segments and URL injection before networking',async()=>{const store=new Store({FIREBASE_PROJECT_ID:'demo-rattler-apd'});let calls=0;store.request=async()=>{calls++;};for(const path of ['calendarEvents/../userRoles/u','calendarEvents/%2e%2e/userRoles/u','calendarEvents/id?mask=admin','calendarEvents/id#fragment','calendarEvents/..\\userRoles\\u']){await assert.rejects(()=>store.get(path));await assert.rejects(()=>store.set(path,{}));await assert.rejects(()=>store.commit([{path,data:{}}]));}assert.equal(calls,0);});
+test('officers cannot replace finalized training results with registrations',async()=>{const s=new MemoryStore({'calendarEvents/e':{title:'Training'},'trainingAttendance/e_u':{eventId:'e',uid:'u',status:'failed'}});await assert.rejects(()=>registerAttendance(s,'e','u','attending'));assert.equal((await s.get('trainingAttendance/e_u')).status,'failed');assert.equal(s.writes.length,0);});

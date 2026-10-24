@@ -1,7 +1,7 @@
 import {Store,websiteUser} from './firebase.mjs';
 import {Discord} from './discord.mjs';
 import {commands,handleInteraction,interactionIdentity} from './interactions.mjs';
-import {tick,reconcileMembers,audit,publishScheduled,trainingReminder} from './workflows.mjs';
+import {tick,reconcileMembers,audit,publishScheduled,trainingReminder,validateMembershipRole} from './workflows.mjs';
 import {redact} from './policy.mjs';
 import {privateDestination,sendOnce} from './workflows.mjs';
 const json=(data,status=200,headers={})=>Response.json(data,{status,headers});
@@ -9,7 +9,7 @@ export default {
  async fetch(request,env,context){
   const url=new URL(request.url),store=new Store(env),discord=new Discord(env);
   const origin=request.headers.get('Origin'),cors=origin===env.ALLOWED_ORIGIN?{'Access-Control-Allow-Origin':origin,'Vary':'Origin'}:{};
-  if(url.pathname==='/health')return json({service:'Rattler Nation APD',architecture:'serverless',configured:!!(env.DISCORD_BOT_TOKEN&&env.FIREBASE_PRIVATE_KEY),membershipReconciliation:env.RECONCILE_MEMBERS==='true'});
+  if(url.pathname==='/health')return json({service:'Rattler Nation APD',architecture:'serverless',configured:!!(env.DISCORD_BOT_TOKEN&&env.FIREBASE_PRIVATE_KEY),membershipReconciliationDefault:env.RECONCILE_MEMBERS==='true'});
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers:{...cors,'Access-Control-Allow-Methods':'POST','Access-Control-Allow-Headers':'Authorization,Content-Type'}});
   if(url.pathname==='/interactions'&&request.method==='POST'){
    if(Number(request.headers.get('Content-Length')||0)>32000)return new Response('Too large',{status:413});
@@ -50,6 +50,7 @@ export default {
    if(origin!==env.ALLOWED_ORIGIN)return json({error:'Origin rejected'},403);
    try{
     const user=await websiteUser(request,env,store);if(!user.role?.admin)return json({error:'Owner access required'},403,cors);if(user.authTime<Math.floor(Date.now()/1000)-600)return json({error:'Verify your session again before sensitive configuration.'},401,cors);
+    if(url.pathname==='/api/diagnostics'){const config=await store.get('discordConfig/main')||{},warnings=[];try{await validateMembershipRole(discord,config);}catch(error){warnings.push(redact(error));}for(const [key,kind]of [['cidPublish','cid'],['cidLogs','cid'],['announcementLogs','admin'],['calendarLogs','admin']]){try{await privateDestination(discord,config,config[key],kind);}catch(error){warnings.push(key+': '+redact(error));}}for(const name of ['warrant-review','ois-evidence-review','internal-affairs']){try{await privateDestination(discord,config,config.channels?.[name],name==='internal-affairs'?'admin':'supervisor');}catch(error){warnings.push(name+': '+redact(error));}}await audit(store,user.uid,'Discord security diagnostics',env.DISCORD_GUILD_ID,warnings.length?'warnings':'passed');return json({checkedAt:new Date(),warnings},200,cors);}
     if(url.pathname==='/api/catalog'){const channels=await discord.api('/guilds/'+env.DISCORD_GUILD_ID+'/channels'),roles=await discord.api('/guilds/'+env.DISCORD_GUILD_ID+'/roles');return json({channels:channels.filter(c=>c.type===0).map(c=>({id:c.id,name:c.name})),roles:roles.filter(r=>r.id!==env.DISCORD_GUILD_ID).map(r=>({id:r.id,name:r.name}))},200,cors);}
     if(url.pathname==='/api/register'){
      const me=await discord.api('/users/@me'),config=await store.get('discordConfig/main')||{};

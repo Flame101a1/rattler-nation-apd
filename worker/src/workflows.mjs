@@ -1,4 +1,4 @@
-import {authorized,officer,setupPlan,ranks,specials,snowflake,safeUrl,announcementPayload,redact,SITE} from './policy.mjs';
+import {authorized,officer,setupPlan,layout,ranks,specials,snowflake,safeUrl,announcementPayload,redact,SITE} from './policy.mjs';
 import {equal} from './firebase.mjs';
 import {announcementDiscordPayload} from '../../announcement-discord.js';
 import {departmentDiscordPayload} from '../../department-discord.js';
@@ -25,6 +25,17 @@ export async function sendOnce(store,discord,job,route,channelId,payload){
  const message=await discord.api('/channels/'+channelId+'/messages','POST',{...payload,nonce,enforce_nonce:true});
  await store.set(path,{state:'sent',jobId:job.id,channelId,messageId:message.id,sentAt:now()});return message.id;
 }
+export async function validateMembershipRole(discord,config){
+ const roles=await discord.api('/guilds/'+discord.env.DISCORD_GUILD_ID+'/roles'),role=roles.find(r=>r.id===config.apdRoleId);
+ if(!role||role.id===discord.env.DISCORD_GUILD_ID||role.managed||BigInt(role.permissions||0)!==0n||[...ranks,...specials].some(name=>config.roles?.[name]===role.id))throw Error('APD membership must use a separate role with no department privileges.');
+ const privateIds=new Set(layout.filter(c=>c.access!=='apd').flatMap(c=>[config.categories?.[c.name],...c.channels.map(n=>config.channels?.[n])]).filter(Boolean));
+ const channels=await discord.api('/guilds/'+discord.env.DISCORD_GUILD_ID+'/channels');for(const channel of channels)if(privateIds.has(channel.id)&&(channel.permission_overwrites||[]).some(o=>o.id===role.id&&(BigInt(o.allow||0)&1024n)!==0n))throw Error('APD membership role has access to a protected channel.');
+ return roles;
+}
+export async function arrangeRankRoles(discord,config){
+ const order=['APD',...ranks,...specials];const positions=order.map((name,index)=>({id:config.roles?.[name],position:index+1})).filter(r=>snowflake(r.id));
+ if(positions.length)await discord.api('/guilds/'+discord.env.DISCORD_GUILD_ID+'/roles','PATCH',positions);
+}
 export async function setupStep(store,discord,job,config){
  if(job.payload?.approved!==true)throw Error('Server layout approval is required.');
  const plan=setupPlan(),index=job.setupStep||0,step=plan[index];if(!step)return {done:true};
@@ -33,7 +44,7 @@ export async function setupStep(store,discord,job,config){
  if(step.kind==='role'){
   const roles=await discord.api('/guilds/'+guild+'/roles');let role=roles.find(r=>r.name===step.name&&!r.managed);
   if(role&&BigInt(role.permissions||0)!==0n)throw Error('Existing role '+step.name+' has permissions; review it before reuse.');
-  role||=await discord.api('/guilds/'+guild+'/roles','POST',{name:step.name,permissions:'0',mentionable:false});config.roles[step.name]=role.id;if(step.name==='APD')config.apdRoleId=role.id;
+  role||=await discord.api('/guilds/'+guild+'/roles','POST',{name:step.name,permissions:'0',mentionable:false});config.roles[step.name]=role.id;if(step.name==='APD')config.apdRoleId=role.id;if(step.name==='APD Bot')await arrangeRankRoles(discord,config);
  }else{
   const all=await discord.api('/guilds/'+guild+'/channels');
   const accessRoles=step.access==='apd'?[config.apdRoleId]:[config.roles['Department Administration'],config.roles['Command Staff'],...(step.access==='cid'?[config.roles['Criminal Investigations']]:step.access==='supervisor'?ranks.slice(5).map(r=>config.roles[r]):[])];
@@ -49,6 +60,7 @@ export async function setupStep(store,discord,job,config){
 }
 export async function synchronizeOfficer(store,discord,config,uid){
  const role=await store.get('userRoles/'+uid),link=await store.get('discordLinks/'+uid);if(!link)return;
+ if(config.apdRoleId)await validateMembershipRole(discord,config);
  const member=await discord.api('/guilds/'+discord.env.DISCORD_GUILD_ID+'/members/'+link.discordId);
  const record=await store.get('officerRecords/'+uid);const managed=new Set([...ranks,...specials.filter(x=>x!=='APD Bot')].map(r=>config.roles?.[r]).filter(Boolean));
  const wanted=new Set(member.roles.filter(id=>!managed.has(id)));
@@ -59,12 +71,18 @@ export async function synchronizeOfficer(store,discord,config,uid){
  for(const assignment of record?.specialAssignments||[])if(officer(role)&&specials.includes(assignment)&&!['APD Bot','Department Administration','Criminal Investigations'].includes(assignment)&&config.roles?.[assignment])wanted.add(config.roles[assignment]);
  await discord.api('/guilds/'+discord.env.DISCORD_GUILD_ID+'/members/'+link.discordId,'PATCH',{roles:[...wanted]});
 }
+export async function registerAttendance(store,eventId,uid,status){
+ if(typeof eventId!=='string'||!['attending','unable'].includes(status))throw Error('Invalid attendance response.');
+ const event=await store.get('calendarEvents/'+eventId);if(!event)throw Error('Event no longer exists.');const path='trainingAttendance/'+eventId+'_'+uid,existing=await store.get(path);
+ if(['passed','failed','absent','excused'].includes(existing?.status))throw Error('Training staff have finalized this result; contact an instructor for corrections.');
+ await store.commit([{path,data:{eventId,uid,status,updatedAt:now()},precondition:existing?{updateTime:existing._updateTime}:{exists:false}}]);
+}
 export async function processJob(store,discord,job,config){
  const role=await store.get('userRoles/'+job.actorUid);if(!authorized(role,job))throw Error('Sender is no longer authorized for this operation.');
  if(job.kind==='setup'){const result=await setupStep(store,discord,job,config);return result.done?{done:true}:{continue:true,setupStep:result.next};}
  if(job.kind==='configure'){
   const allowed=['apdRoleId','announcementsPublish','announcementLogs','calendarPublish','calendarLogs','cidPublish','cidLogs'];
-  for(const [k,v] of Object.entries(job.payload||{})){if(k==='reminderMinutes'){if(!Array.isArray(v)||v.length>3||v.some(n=>!Number.isInteger(n)||n<15||n>1440))throw Error('Use up to three reminder intervals between 15 and 1440 minutes.');config[k]=[...new Set(v)];continue;}if(k==='allowedMentionRoleIds'){if(!Array.isArray(v)||v.length>5||v.some(id=>!snowflake(id)||id===discord.env.DISCORD_GUILD_ID))throw Error('Invalid mention role list.');const roles=await discord.api('/guilds/'+discord.env.DISCORD_GUILD_ID+'/roles');if(v.some(id=>!roles.some(r=>r.id===id)))throw Error('Mention role belongs to another server.');config[k]=v;continue;}if(v==='')continue;if(!allowed.includes(k)||!snowflake(v))throw Error('Invalid channel or role configuration.');if(k==='apdRoleId'){const roles=await discord.api('/guilds/'+discord.env.DISCORD_GUILD_ID+'/roles');if(v===discord.env.DISCORD_GUILD_ID||!roles.some(r=>r.id===v))throw Error('Invalid APD membership role.');}if(k!=='apdRoleId'){const ch=await discord.api('/channels/'+v);if(ch.guild_id!==discord.env.DISCORD_GUILD_ID)throw Error('Channel belongs to another server.');}config[k]=v;}
+  for(const [k,v] of Object.entries(job.payload||{})){if(k==='reconcileMembers'){if(typeof v!=='boolean')throw Error('Invalid membership setting.');if(v){await validateMembershipRole(discord,config);await discord.api('/guilds/'+discord.env.DISCORD_GUILD_ID+'/members?limit=1');const roles=await discord.api('/guilds/'+discord.env.DISCORD_GUILD_ID+'/roles'),member=await discord.api('/guilds/'+discord.env.DISCORD_GUILD_ID+'/members/'+config.botId);const own=roles.filter(r=>member.roles.includes(r.id)),apd=roles.find(r=>r.id===config.apdRoleId);if(!apd||!own.some(r=>(BigInt(r.permissions||0)&268435456n)!==0n)||Math.max(...own.map(r=>r.position))<=apd.position)throw Error('Bot requires Manage Roles and a role above APD before membership reconciliation.');}config[k]=v;continue;}if(k==='arrangeRanks'){if(v!==true)throw Error('Invalid hierarchy request.');await arrangeRankRoles(discord,config);continue;}if(k==='reminderMinutes'){if(!Array.isArray(v)||v.length>3||v.some(n=>!Number.isInteger(n)||n<15||n>1440))throw Error('Use up to three reminder intervals between 15 and 1440 minutes.');config[k]=[...new Set(v)];continue;}if(k==='allowedMentionRoleIds'){if(!Array.isArray(v)||v.length>5||v.some(id=>!snowflake(id)||id===discord.env.DISCORD_GUILD_ID))throw Error('Invalid mention role list.');const roles=await discord.api('/guilds/'+discord.env.DISCORD_GUILD_ID+'/roles');if(v.some(id=>!roles.some(r=>r.id===id)))throw Error('Mention role belongs to another server.');config[k]=v;continue;}if(v==='')continue;if(!allowed.includes(k)||!snowflake(v))throw Error('Invalid channel or role configuration.');if(k==='apdRoleId')await validateMembershipRole(discord,{...config,apdRoleId:v});if(k!=='apdRoleId'){const ch=await discord.api('/channels/'+v);if(ch.guild_id!==discord.env.DISCORD_GUILD_ID)throw Error('Channel belongs to another server.');}config[k]=v;}
   await store.set('discordConfig/main',config);return {done:true};
  }
  if(job.kind==='syncRoles'){const links=await store.list('discordLinks',1,undefined,job.syncAfter);if(links.length){await synchronizeOfficer(store,discord,config,links[0].id);return {continue:true,syncAfter:links[0].id};}return {done:true,note:'Linked officers synchronized.'};}
@@ -77,11 +95,7 @@ export async function processJob(store,discord,job,config){
   if(failed.status==='manual_review')throw Error('Inspect Discord before retrying uncertain deliveries; use the receipt recovery procedure.');
   await store.set('discordJobs/'+failed.id,{status:'pending',error:'',attempts:0},['status','error','attempts']);return {done:true};
  }
- if(job.kind==='attendance'){
-  const p=job.payload||{},event=await store.get('calendarEvents/'+p.eventId);if(!event)throw Error('Training event not found.');
-  if(!['attending','unable'].includes(p.status))throw Error('Invalid attendance response.');
-  await store.set('trainingAttendance/'+p.eventId+'_'+job.actorUid,{eventId:p.eventId,uid:job.actorUid,status:p.status,updatedAt:now()});return {done:true};
- }
+ if(job.kind==='attendance'){await registerAttendance(store,job.payload?.eventId,job.actorUid,job.payload?.status);return {done:true};}
  if(job.kind==='submission'){
   const type=job.payload?.type,id=job.payload?.id;const collections={warrant:'warrantSubmissions',ois:'oisSubmissions',support:'supportRequests',suggestion:'supportRequests',complaint:'supportRequests',request:'supportRequests'};
   if(!collections[type]||typeof id!=='string')throw Error('Invalid submission.');const record=await store.get(collections[type]+'/'+id);if(!record||record.ownerUid!==job.actorUid)throw Error('Submission ownership mismatch.');if(record.type!==type||!Array.isArray(record.links)||record.links.length>10||record.links.some(link=>!safeUrl(link)))throw Error('Invalid submission links or type.');if(type==='warrant'&&!record.links.length)throw Error('Warrant document required.');
@@ -155,8 +169,8 @@ export async function tick(store,discord,env){
  await store.set('botStatus/main',{state:'serverless ready',heartbeatAt:now(),serverId:env.DISCORD_GUILD_ID,roleCount:Object.keys(config.roles||{}).length,channelCount:Object.keys(config.channels||{}).length});
 }
 export async function reconcileMembers(store,discord,env){
- if(env.RECONCILE_MEMBERS!=='true')return;
- const config=await store.get('discordConfig/main');if(!config?.apdRoleId)return;
+ const config=await store.get('discordConfig/main');if(!(config?.reconcileMembers??(env.RECONCILE_MEMBERS==='true'))||!config?.apdRoleId)return;
+ await validateMembershipRole(discord,config);
  const state=await store.get('botState/memberCursor');const page=await discord.api('/guilds/'+env.DISCORD_GUILD_ID+'/members?limit=10'+(state?.after?'&after='+state.after:''));
  for(const member of page){if(!member.user.bot&&!member.roles.includes(config.apdRoleId))await discord.api('/guilds/'+env.DISCORD_GUILD_ID+'/members/'+member.user.id+'/roles/'+config.apdRoleId,'PUT');}
  await store.set('botState/memberCursor',{after:page.length===10?page.at(-1).user.id:'',updatedAt:now()});
