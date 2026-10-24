@@ -1,0 +1,20 @@
+name: Portal checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node worker/scripts/check.mjs
+      - run: node --test worker/test/security.test.mjs
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci --prefix security --ignore-scripts --no-fund --no-audit
+      - run: security/node_modules/.bin/firebase emulators:exec --project demo-rattler-apd --only firestore "node --test security/firestore-emulator.test.mjs"

@@ -8,3 +8,16 @@ firestore-debug.log
 ui-debug.log
 
 .vscode/
+
+# Serverless integration secrets and development dependencies
+**/node_modules/
+**/.env
+**/.env.*
+!**/.env.example
+**/.secrets/
+*-service-account.json
+service-account*.json
+
+worker/.dev.vars*
+!worker/.dev.vars.example
+worker/.wrangler/

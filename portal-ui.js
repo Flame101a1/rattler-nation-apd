@@ -25,6 +25,7 @@
     ["Announcements", "announcements.html", "", "Main"],
     ["Gallery", "gallery.html", "", "Main"],
     ["Officer Resources", "resources.html", "", "Main"],
+    ["Officer Services", "officer.html", "", "Main"],
     ["CID Portal", "cid.html", "", "Main"],
     ["Training", "training.html", "", "Main"],
     ["Roster", "roster.html", "", "Main"],

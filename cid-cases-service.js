@@ -114,3 +114,10 @@ function generatedCaseNumber(){
 
   return `CID-${dateKey}-${String(now.getTime()).slice(-5)}`;
 }
+
+export function updateCidCase(caseId,changes,staffAccess){
+  if(!caseId||!staffAccess.user)throw Error("Authorized sign-in required.");
+  const status=changes.status||"Open";
+  if(!["Open","Awaiting Warrant Approval","Pending Review","Suspended","Closed"].includes(status))throw Error("Invalid case status.");
+  return updateDoc(doc(db,"cidCases",caseId),{status,priority:String(changes.priority||"Standard").slice(0,30),leadInvestigator:String(changes.leadInvestigator||"").slice(0,500),updatedBy:staffAccess.user.email||"",updatedAt:serverTimestamp()});
+}

@@ -1,6 +1,7 @@
 import { confirmPortalAction } from "./portal-confirm.js";
 import {
   createAnnouncement,
+  subscribeToAnnouncementDrafts,
   deleteAnnouncement,
   subscribeToAnnouncements
 } from "./announcements-service.js";
@@ -19,6 +20,8 @@ let staffAccess = {
   canEdit:false
 };
 let currentAnnouncements = [];
+let stopDrafts = null;
+let currentDrafts = [];
 
 const announcementList = document.getElementById("all-announcements-list");
 const editorCard = document.getElementById("announcementEditorCard");
@@ -53,6 +56,9 @@ if(announcementList){
 watchStaffAuth(access => {
   staffAccess = access;
   updateAccessUI();
+  if(stopDrafts)stopDrafts();stopDrafts=null;
+  const draftPanel=document.getElementById("announcementDraftPanel");draftPanel.hidden=!access.role?.admin;
+  if(access.role?.admin)stopDrafts=subscribeToAnnouncementDrafts(rows=>{currentDrafts=rows;const list=document.getElementById("announcementDraftList");list.replaceChildren();for(const record of rows){const b=document.createElement("button");b.className="back-button";b.type="button";b.textContent=record.title+" • "+record.publishState;b.onclick=()=>editAnnouncement(record,true);list.append(b);}},()=>setFormStatus("Drafts unavailable. Publish the new Firestore rules."));
 
   if(access.user && !access.canEdit){
     setAuthStatus("This account does not have announcement editor access.", "warning");
@@ -82,6 +88,7 @@ function renderAnnouncements(announcements){
     button.addEventListener("click", () => handleDeleteAnnouncement(button.dataset.deleteAnnouncement));
   });
 
+  announcementList.querySelectorAll("[data-edit-announcement]").forEach(button=>button.addEventListener("click",()=>editAnnouncement(currentAnnouncements.find(r=>r.id===button.dataset.editAnnouncement),false)));
   updateAccessUI();
 }
 
@@ -93,6 +100,7 @@ function announcementHTML(announcement){
         <p>${escapeHTML(announcement.message || "")}</p>
         <span>${announcementMeta(announcement)}</span>
       </div>
+      <button class="back-button announcement-delete" data-edit-announcement="${escapeAttr(announcement.id)}" type="button" hidden>Edit</button>
       <button class="danger-btn announcement-delete" data-delete-announcement="${escapeAttr(announcement.id)}" type="button" hidden>Delete</button>
     </div>
   `;
@@ -122,12 +130,14 @@ function announcementMeta(announcement){
   return escapeHTML(parts.join(" • "));
 }
 
+let announcementSaving=false;
 async function handleAnnouncementSubmit(event){
   event.preventDefault();
+  if(announcementSaving)return;
   clearFormErrors();
 
   if(!userCanManageAnnouncements()){
-    setFormStatus("You must be signed in as an approved editor to publish announcements.");
+    setFormStatus("You must be signed in as an owner to publish announcements.");
     return;
   }
 
@@ -136,9 +146,17 @@ async function handleAnnouncementSubmit(event){
     category:document.getElementById("announcementCategory").value,
     priority:document.getElementById("announcementPriority").value,
     author:document.getElementById("announcementAuthor").value.trim(),
-    message:document.getElementById("announcementMessage").value.trim()
+    message:document.getElementById("announcementMessage").value.trim(),
+    id:document.getElementById("announcementEditingId").value,
+    wasDraft:document.getElementById("announcementEditingDraft").value === "true",
+    format:document.getElementById("announcementFormat").value,
+    pingApd:document.getElementById("announcementPingApd").checked,
+    publishState:document.getElementById("announcementPublishState").value,
+    scheduledFor:document.getElementById("announcementSchedule").value ? new Date(document.getElementById("announcementSchedule").value).toISOString() : "",
+    roleIds:document.getElementById("announcementRoleIds").value.split(",").map(s=>s.trim()).filter(Boolean)
   };
 
+  if(announcement.publishState === "scheduled" && (!announcement.scheduledFor || Date.parse(announcement.scheduledFor)<=Date.now())){setFormStatus("Choose a future scheduled time.");return;}
   const errors = validateAnnouncement(announcement);
 
   if(Object.keys(errors).length){
@@ -147,29 +165,22 @@ async function handleAnnouncementSubmit(event){
     return;
   }
 
+  announcementSaving=true;
+  const submit=announcementForm.querySelector("button[type=submit],button:not([type])");if(submit)submit.disabled=true;
   try{
     setFormStatus("Publishing announcement...");
     const createdAnnouncement = await createAnnouncement(announcement);
-    await logPortalAction(staffAccess, {
-      action:"Announcement Published",
-      category:"Announcements",
-      message:`Published ${announcement.priority || "Normal"} announcement: ${announcement.title}.`,
-      targetUid:createdAnnouncement.id || "",
-      targetLabel:announcement.title,
-      announcement:{...announcement},
-      publishDetails:[announcement.message, "Category: " + announcement.category, "Priority: " + announcement.priority, announcement.author ? "Posted by: " + announcement.author : ""].filter(Boolean).join("\n\n")
-    });
     announcementForm.reset();
-    setFormStatus("Announcement published.");
+    setFormStatus(createdAnnouncement.draft ? "Draft saved. Scheduled drafts are published by the serverless scheduler when due." : "Announcement saved. Discord delivery is queued; owners can check delivery status in Admin Console.");
   }catch(error){
     console.error("Announcement publish failed:", error);
     setFormStatus("Announcement could not be published. Check portal access and try again.");
-  }
+  }finally{announcementSaving=false;if(submit)submit.disabled=false;}
 }
 
 async function handleDeleteAnnouncement(announcementId){
   if(!userCanManageAnnouncements()){
-    setAuthStatus("Only approved editors can remove announcements.", "warning");
+    setAuthStatus("Only owners can remove announcements.", "warning");
     return;
   }
 
@@ -186,15 +197,8 @@ async function handleDeleteAnnouncement(announcementId){
 
   try{
     const announcement = currentAnnouncements.find(item => item.id === announcementId);
-    await deleteAnnouncement(announcementId);
-    await logPortalAction(staffAccess, {
-      action:"Announcement Deleted",
-      category:"Announcements",
-      message:`Deleted announcement: ${announcement?.title || announcementId}.`,
-      targetUid:announcementId,
-      targetLabel:announcement?.title || announcementId,
-      announcement:announcement ? {title:announcement.title, message:announcement.message, category:announcement.category, priority:announcement.priority, author:announcement.author} : {}
-    });
+    await deleteAnnouncement(announcementId,announcement||{});
+
   }catch(error){
     console.error("Announcement delete failed:", error);
     setAuthStatus("Announcement could not be deleted. Check portal access and try again.", "error");
@@ -262,13 +266,13 @@ function updateAccessUI(){
       : "Sign in with an approved staff account to add or remove announcements.";
   }
 
-  document.querySelectorAll("[data-delete-announcement]").forEach(button => {
+  document.querySelectorAll("[data-delete-announcement], [data-edit-announcement]").forEach(button => {
     button.hidden = !canEdit;
   });
 }
 
 function userCanManageAnnouncements(){
-  return Boolean(staffAccess.canEdit);
+  return Boolean(staffAccess.role?.admin);
 }
 
 function validateAnnouncement(announcement){
@@ -365,3 +369,16 @@ function emptyStateHTML(title, message, variant = ""){
     </div>
   `;
 }
+
+function editAnnouncement(record,draft){
+ if(!record||!staffAccess.role?.admin)return;
+ document.getElementById("announcementEditingId").value=record.id;
+ document.getElementById("announcementEditingDraft").value=String(draft);
+ for(const [id,key] of [["announcementTitle","title"],["announcementMessage","message"],["announcementCategory","category"],["announcementPriority","priority"],["announcementAuthor","author"],["announcementFormat","format"],["announcementPublishState","publishState"]])document.getElementById(id).value=record[key]||({format:"plain",publishState:"published"}[key]||"");
+ document.getElementById("announcementPingApd").checked=record.pingApd!==false;
+ document.getElementById("announcementRoleIds").value=(record.roleIds||[]).join(", ");
+ if(record.scheduledFor){const date=new Date(record.scheduledFor);date.setMinutes(date.getMinutes()-date.getTimezoneOffset());document.getElementById("announcementSchedule").value=date.toISOString().slice(0,16);}
+ editorCard.scrollIntoView({behavior:"smooth"});
+}
+document.getElementById("announcementPreviewBtn")?.addEventListener("click",()=>{const preview=document.getElementById("announcementPreview");preview.hidden=false;preview.textContent=(document.getElementById("announcementPingApd").checked?"@APD\n\n":"")+document.getElementById("announcementTitle").value+"\n\n"+document.getElementById("announcementMessage").value;});
+document.getElementById("announcementCancelEditBtn")?.addEventListener("click",()=>{announcementForm.reset();document.getElementById("announcementEditingId").value="";document.getElementById("announcementEditingDraft").value="";document.getElementById("announcementPreview").hidden=true;});

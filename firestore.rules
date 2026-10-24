@@ -1,0 +1,86 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function signed(){return request.auth != null;}
+  function role(){return get(/databases/$(database)/documents/userRoles/$(request.auth.uid)).data;}
+  function approved(){return signed() && exists(/databases/$(database)/documents/userRoles/$(request.auth.uid));}
+  function admin(){return approved() && role().get('admin',false)==true;}
+  function editor(){return approved() && (admin() || role().get('calendarEditor',false)==true);}
+  function cid(){return approved() && (admin() || role().get('cidEditor',false)==true);}
+  function officer(){return approved() && (editor() || cid() || role().get('officer',false)==true);}
+  function reviewer(){return approved() && (admin() || role().get('reviewer',false)==true);}
+  function recent(){return signed() && request.auth.token.auth_time > (request.time.toMillis() / 1000) - 600;}
+  function str(d,k,n){return d.get(k,'') is string && d.get(k,'').size()<=n;}
+  function categoryAccess(c){return c=='CID' ? cid() : c=='Announcements' ? admin() : c in ['Admin','Access','System'] ? admin() : editor();}
+  function validAnnouncement(d){return str(d,'title',200) && str(d,'message',3800) && str(d,'author',150) && str(d,'category',100) && d.get('format','plain') in ['plain','embed'] && d.get('roleIds',[]) is list && d.get('roleIds',[]).size()<=5;}
+  match /userRoles/{uid} {
+   allow get: if signed() && (uid==request.auth.uid || admin());
+   allow list: if admin();
+   allow create,update: if admin() && recent()
+    && request.resource.data.keys().hasOnly(['email','displayName','admin','calendarEditor','officer','cidEditor','reviewer','updatedAt'])
+    && request.resource.data.admin is bool && request.resource.data.calendarEditor is bool
+    && request.resource.data.get('officer',false) is bool && request.resource.data.get('cidEditor',false) is bool && request.resource.data.get('reviewer',false) is bool
+    && str(request.resource.data,'email',254) && str(request.resource.data,'displayName',150)
+    && (uid!=request.auth.uid || request.resource.data.admin==true);
+   allow delete: if admin() && recent() && uid!=request.auth.uid;
+  }
+  match /announcements/{id} {
+   allow read: if true;
+   allow create: if admin() && validAnnouncement(request.resource.data) && request.resource.data.createdByUid==request.auth.uid && request.resource.data.updatedByUid==request.auth.uid && request.resource.data.publishState=='published';
+   allow update: if admin() && validAnnouncement(request.resource.data) && request.resource.data.updatedByUid==request.auth.uid && request.resource.data.publishState=='published' && request.resource.data.get('createdByUid','')==resource.data.get('createdByUid','');
+   allow delete: if admin();
+  }
+  match /announcementDrafts/{id} {allow read: if admin();allow create,update: if admin() && validAnnouncement(request.resource.data) && request.resource.data.updatedByUid==request.auth.uid && request.resource.data.publishState in ['draft','scheduled'];allow delete: if admin();}
+  match /calendarEvents/{id} {allow read: if true;allow create,update: if editor() && str(request.resource.data,'title',200) && str(request.resource.data,'description',3000) && str(request.resource.data,'date',10) && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');allow delete: if editor();}
+  match /resourcePosts/{id} {allow read: if true;allow create,update,delete: if editor();}
+  match /trainingReferencePosts/{id} {allow read: if true;allow create,update,delete: if editor();}
+  match /cidCases/{id} {
+   allow read: if cid();
+   allow create: if cid() && request.resource.data.createdByUid==request.auth.uid && str(request.resource.data,'subjectName',2000) && str(request.resource.data,'summary',2000);
+   allow update: if cid() && request.resource.data.createdByUid==resource.data.createdByUid;
+   allow delete: if cid();
+   match /narratives/{n} {allow read: if cid();allow create: if cid() && request.resource.data.authorUid==request.auth.uid && str(request.resource.data,'body',20000);allow update: if false;allow delete: if cid();}
+  }
+  match /portalLogs/{id} {
+   allow read: if admin();
+   allow create: if signed() && categoryAccess(request.resource.data.category) && request.resource.data.actorUid==request.auth.uid && request.resource.data.createdAt==request.time
+     && request.resource.data.keys().hasOnly(['action','category','message','actorUid','actorEmail','actorDisplayName','targetUid','targetLabel','createdAt','announcement','calendarEvent','suspectNames'])
+     && str(request.resource.data,'action',100) && str(request.resource.data,'message',3000) && str(request.resource.data,'targetUid',128) && str(request.resource.data,'targetLabel',2000);
+   allow update,delete: if false;
+  }
+  function baseJob(d){return signed() && d.actorUid==request.auth.uid && d.status=='pending' && d.attempts==0 && d.createdAt==request.time;}
+  function validActivity(d){let log=getAfter(/databases/$(database)/documents/portalLogs/$(d.logId)).data;return d.keys().hasOnly(['kind','logId','actorUid','category','targetUid','status','attempts','createdAt']) && categoryAccess(d.category) && log.actorUid==request.auth.uid && log.category==d.category && log.targetUid==d.targetUid && log.createdAt==request.time;}
+  function validSubmissionJob(d){let type=d.payload.type;let id=d.payload.id;return officer() && (type=='warrant' ? getAfter(/databases/$(database)/documents/warrantSubmissions/$(id)).data.ownerUid==request.auth.uid : type=='ois' ? getAfter(/databases/$(database)/documents/oisSubmissions/$(id)).data.ownerUid==request.auth.uid : type in ['support','suggestion','complaint','request'] && getAfter(/databases/$(database)/documents/supportRequests/$(id)).data.ownerUid==request.auth.uid);}
+  match /discordJobs/{id} {
+   allow read: if admin() || (signed() && resource.data.actorUid==request.auth.uid);
+   allow create: if baseJob(request.resource.data) && (request.resource.data.kind=='activity' ? validActivity(request.resource.data) : request.resource.data.keys().hasOnly(['kind','payload','actorUid','status','attempts','createdAt']) && (request.resource.data.kind in ['setup','configure','syncRoles','rank','retry'] ? admin() && recent() : request.resource.data.kind=='review' ? reviewer() : request.resource.data.kind=='submission' ? validSubmissionJob(request.resource.data) : request.resource.data.kind=='attendance' && officer()));
+   allow update,delete: if false;
+  }
+  match /discordLinkCodes/{code} {
+   allow create: if officer() && code.matches('^[a-f0-9]{64}$') && request.resource.data.keys().hasOnly(['uid','createdAt','expiresAt','used']) && request.resource.data.uid==request.auth.uid && request.resource.data.used==false && request.resource.data.createdAt==request.time && request.resource.data.expiresAt>request.time && request.resource.data.expiresAt<=request.time+duration.value(5,'m');
+   allow read,update,delete: if false;
+  }
+  match /discordLinks/{uid} {allow read: if admin() || (signed() && uid==request.auth.uid);allow write: if false;}
+  match /discordIdentities/{id} {allow read,write: if false;}
+  match /discordConfig/{id} {allow read: if admin();allow write: if false;}
+  match /botStatus/{id} {allow read: if officer();allow write: if false;}
+  match /officerRecords/{uid} {
+   allow read: if officer();
+   allow create,update: if admin() && recent() && uid!=request.auth.uid && request.resource.data.keys().hasOnly(['name','badge','callsign','rank','division','status','specialAssignments','trainingStatus','updatedAt','updatedBy']) && request.resource.data.updatedBy==request.auth.uid && str(request.resource.data,'name',150) && str(request.resource.data,'rank',60) && str(request.resource.data,'trainingStatus',500) && request.resource.data.get('specialAssignments',[]) is list && request.resource.data.get('specialAssignments',[]).size()<=6;
+   allow delete: if false;
+  }
+  function validSubmission(d){return officer() && d.ownerUid==request.auth.uid && d.status=='Submitted' && d.createdAt==request.time && d.keys().hasOnly(['ownerUid','type','status','createdAt','warrantType','incidentDate','incidentReference','involvedOfficers','links','notes','anonymous']) && str(d,'notes',4000) && str(d,'involvedOfficers',1000) && str(d,'incidentReference',100) && d.links is list && d.links.size()<=10;}
+  match /warrantSubmissions/{id} {allow create: if validSubmission(request.resource.data) && request.resource.data.type=='warrant';allow read: if reviewer() || (signed() && resource.data.ownerUid==request.auth.uid);allow update,delete: if false;}
+  match /oisSubmissions/{id} {allow create: if validSubmission(request.resource.data) && request.resource.data.type=='ois';allow read: if reviewer() || (signed() && resource.data.ownerUid==request.auth.uid);allow update,delete: if false;}
+  match /supportRequests/{id} {allow create: if validSubmission(request.resource.data) && request.resource.data.type in ['support','suggestion','complaint','request'];allow read: if admin() || (signed() && resource.data.ownerUid==request.auth.uid);allow update,delete: if false;}
+  match /officerNotifications/{id} {allow read: if signed() && resource.data.uid==request.auth.uid;allow write: if false;}
+  match /trainingAttendance/{id} {
+   allow read: if editor() || (signed() && resource.data.uid==request.auth.uid);
+   allow update: if editor() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','reviewedBy','updatedAt']) && request.resource.data.status in ['attending','unable','passed','failed','absent','excused'] && request.resource.data.reviewedBy==request.auth.uid;
+   allow create,delete: if false;
+  }
+  match /securityStatus/{id} {allow read: if admin();allow write: if false;}
+  match /securityAudit/{id} {allow read: if admin();allow write: if false;}
+  match /{document=**} {allow read,write: if false;}
+ }
+}

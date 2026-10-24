@@ -1,0 +1,11 @@
+# Local development only; use wrangler secret put for production.
+DISCORD_BOT_TOKEN=""
+DISCORD_PUBLIC_KEY=""
+DISCORD_APPLICATION_ID=""
+DISCORD_GUILD_ID=""
+FIREBASE_CLIENT_EMAIL=""
+FIREBASE_PRIVATE_KEY=""
+FIREBASE_WEB_API_KEY=""
+
+# Optional Google Forms generic notifications only
+FORMS_HMAC_KEY=""

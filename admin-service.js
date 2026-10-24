@@ -39,6 +39,9 @@ export function saveAuthorizedUser(userRole){
       displayName:userRole.displayName || "",
       calendarEditor:Boolean(userRole.calendarEditor),
       admin:Boolean(userRole.admin),
+      officer:Boolean(userRole.officer),
+      reviewer:Boolean(userRole.reviewer),
+      cidEditor:Boolean(userRole.cidEditor),
       updatedAt:serverTimestamp()
     },
     { merge:true }

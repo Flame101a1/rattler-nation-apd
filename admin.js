@@ -112,7 +112,10 @@ async function handleRoleSave(event){
     email:document.getElementById("roleEmail").value.trim(),
     displayName:document.getElementById("roleDisplayName").value.trim(),
     calendarEditor:document.getElementById("roleCalendarEditor").checked,
-    admin:document.getElementById("roleAdmin").checked
+    admin:document.getElementById("roleAdmin").checked,
+    officer:document.getElementById("roleOfficer").checked,
+    reviewer:document.getElementById("roleReviewer").checked,
+    cidEditor:document.getElementById("roleCidEditor").checked
   };
 
   if(!userRole.uid){
@@ -208,6 +211,9 @@ function editRole(user){
   document.getElementById("roleDisplayName").value = user.displayName || "";
   document.getElementById("roleCalendarEditor").checked = Boolean(user.calendarEditor);
   document.getElementById("roleAdmin").checked = Boolean(user.admin);
+  document.getElementById("roleOfficer").checked = Boolean(user.officer);
+  document.getElementById("roleReviewer").checked = Boolean(user.reviewer);
+  document.getElementById("roleCidEditor").checked = Boolean(user.cidEditor);
   setRoleStatus("Editing authorized account.");
 }
 

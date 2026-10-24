@@ -33,7 +33,7 @@ function loadGallery(){
           alt="${title}"
           loading="lazy"
           decoding="async"
-          onclick="openImage('${image}')"
+          data-gallery-image="${image}"
         >
         <div class="gallery-info">
           <h3>${title}</h3>
@@ -64,4 +64,6 @@ function closeImage(){
   }
 }
 
+document.getElementById("gallery-list")?.addEventListener("click",event=>{const image=event.target.closest("[data-gallery-image]");if(image)openImage(image.dataset.galleryImage);});
+document.getElementById("closeGalleryImage")?.addEventListener("click",closeImage);
 loadGallery();

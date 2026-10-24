@@ -1,0 +1,6 @@
+import fs from 'node:fs';import path from 'node:path';import {spawnSync} from 'node:child_process';
+const root=path.resolve(import.meta.dirname,'../..');let count=0,errors=[];
+for(const folder of [root,path.join(root,'worker/src')])for(const file of fs.readdirSync(folder)){if(!/\.(js|mjs)$/.test(file))continue;count++;const r=spawnSync(process.execPath,['--check',path.join(folder,file)],{encoding:'utf8'});if(r.status)errors.push(file+': syntax');}
+for(const file of fs.readdirSync(root).filter(f=>f.endsWith('.html'))){const html=fs.readFileSync(path.join(root,file),'utf8');const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);if(ids.length!==new Set(ids).size)errors.push(file+': duplicate IDs');for(const m of html.matchAll(/(?:src|href|data-portal-module)="([^"]+)"/g)){const url=m[1];if(/^(https?:|#|mailto:|data:)/.test(url))continue;const target=url.split('#')[0];if(target&&!fs.existsSync(path.join(root,target)))errors.push(file+': missing '+target);}}
+const publicFiles=fs.readdirSync(root).filter(f=>/\.(js|html|json)$/.test(f));for(const file of publicFiles){if(/discord(?:app)?\.com\/api\/webhooks\/\d+\/[^\s"']+/.test(fs.readFileSync(path.join(root,file),'utf8')))errors.push(file+': public webhook credential');}
+console.log(JSON.stringify({javascriptFiles:count,errors},null,2));if(errors.length)process.exitCode=1;

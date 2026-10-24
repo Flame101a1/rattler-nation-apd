@@ -1,7 +1,10 @@
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
-  signOut
+  signOut,
+  sendPasswordResetEmail,
+  reauthenticateWithCredential,
+  EmailAuthProvider
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 import {
@@ -35,7 +38,9 @@ export function watchStaffAuth(onChange){
     onChange({
       user,
       role,
-      canEdit:Boolean(role?.calendarEditor || role?.admin)
+      canEdit:Boolean(role?.calendarEditor || role?.admin),
+      canCid:Boolean(role?.cidEditor || role?.admin),
+      canOfficer:Boolean(role?.officer || role?.calendarEditor || role?.cidEditor || role?.admin)
     });
   });
 }
@@ -57,3 +62,7 @@ async function getStaffRole(uid){
 
   return roleSnapshot.data();
 }
+
+export function recoverStaffAccount(email){return sendPasswordResetEmail(auth,email);}
+
+export async function reauthenticateStaff(password){if(!auth.currentUser?.email)throw Error("Sign in first.");await reauthenticateWithCredential(auth.currentUser,EmailAuthProvider.credential(auth.currentUser.email,password));await auth.currentUser.getIdToken(true);}

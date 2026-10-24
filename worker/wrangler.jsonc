@@ -1,0 +1,22 @@
+{
+  "name": "rattler-apd-discord",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "triggers": {
+    "crons": [
+      "* * * * *"
+    ]
+  },
+  "vars": {
+    "FIREBASE_PROJECT_ID": "rattler-nation-apd",
+    "SITE_URL": "https://flame101a1.github.io/rattler-nation-apd/",
+    "ALLOWED_ORIGIN": "https://flame101a1.github.io",
+    "DAILY_JOB_LIMIT": "300",
+    "RECONCILE_MEMBERS": "false",
+    "INTEGRATION_ENABLED": "false"
+  },
+  "observability": {
+    "enabled": false
+  }
+}
