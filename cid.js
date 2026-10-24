@@ -2,6 +2,7 @@ import {
   addCaseNarrative,
   createCidCase,
   deleteCidCase,
+  updateCidCase,
   subscribeToCaseNarratives,
   subscribeToCidCases
 } from "./cid-cases-service.js";
@@ -84,7 +85,7 @@ watchStaffAuth(access => {
   staffAccess = access;
   stopCaseSubscription();
   updateAccessUI();
-  if(!access.canEdit){
+  if(!access.canCid){
     cidCases = [];
     if(!deletingCase){
       closeDetailsModal();
@@ -475,6 +476,9 @@ function openDetailsModal(caseId){
   }
 
   activeCaseId = caseId;
+  document.getElementById("cidUpdateStatus").value=caseFile.status||"Open";
+  document.getElementById("cidUpdatePriority").value=caseFile.priority||"Standard";
+  document.getElementById("cidUpdateInvestigator").value=caseFile.leadInvestigator||"";
   if(deleteStatus) deleteStatus.textContent = "";
 
   if(detailsTitle){
@@ -674,6 +678,7 @@ async function handleSignOut(){
 
 function updateAccessUI(){
   const canEdit = canManageCases();
+  document.getElementById("cidUpdateForm").hidden=!canEdit||!activeCaseId;
   if(deleteCaseBtn) deleteCaseBtn.hidden = !canEdit || !activeCaseId;
 
   if(createCaseBtn){
@@ -708,7 +713,7 @@ function updateAccessUI(){
 }
 
 function canManageCases(){
-  return Boolean(staffAccess.canEdit);
+  return Boolean(staffAccess.canCid);
 }
 
 function validateCase(caseData){
@@ -1162,3 +1167,10 @@ function emptyStateHTML(title, message, variant = ""){
     </div>
   `;
 }
+
+document.getElementById("cidUpdateForm")?.addEventListener("submit",async event=>{
+ event.preventDefault();if(!canManageCases()||!activeCaseId)return;
+ const caseFile=cidCases.find(c=>c.id===activeCaseId);if(!caseFile)return;
+ const button=event.submitter;button.disabled=true;
+ try{const changes={status:document.getElementById("cidUpdateStatus").value,priority:document.getElementById("cidUpdatePriority").value,leadInvestigator:document.getElementById("cidUpdateInvestigator").value};await updateCidCase(activeCaseId,changes,staffAccess);await logPortalAction(staffAccess,{action:changes.status==="Closed"?"CID Case Closed":"CID Case Updated",category:"CID",message:"Updated case assignment or status.",targetUid:activeCaseId,targetLabel:caseFile.subjectName||"CID Case File",suspectNames:(caseFile.subjectIdentifiers||"").match(/^Subject\(s\):\s*(.+)$/m)?.[1]||""});document.getElementById("cidUpdateStatusMessage").textContent="Case updated. Restricted CID notification queued.";}catch{document.getElementById("cidUpdateStatusMessage").textContent="Case update failed. Check CID access and Firebase rules.";}finally{button.disabled=false;}
+});

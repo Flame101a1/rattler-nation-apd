@@ -9,6 +9,9 @@
   <script type="application/json" data-portal-module="admin.js"></script>
 <script type="module" src="portal-bootstrap.js"></script>
 <link rel="icon" type="image/png" href="images/austin-police-patch.png">
+<script type="module" src="discord-admin.js"></script>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://*.workers.dev; frame-src https://docs.google.com https://*.firebaseapp.com https://accounts.google.com; form-action 'self' https://docs.google.com; base-uri 'self'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
 </head>
 <body>
   <div class="page-layout">
@@ -80,6 +83,9 @@
           </div>
 
           <div class="admin-role-toggles span-2">
+<label class="planner-switch"><input id="roleReviewer" type="checkbox"><span></span>Warrant / OIS Reviewer</label>
+<label class="planner-switch"><input id="roleOfficer" type="checkbox"><span></span>Officer Access</label>
+<label class="planner-switch"><input id="roleCidEditor" type="checkbox"><span></span>CID Access</label>
             <label class="planner-switch">
               <input id="roleCalendarEditor" type="checkbox">
               <span></span>
@@ -133,6 +139,26 @@
       </div>
     </section>
 
+    <section class="page-card" id="discordAdminPanel" hidden>
+<h2>Discord Management</h2><form id="discordReauthForm"><label for="discordReauthPassword">Confirm your password for sensitive configuration (valid for 10 minutes)</label><input id="discordReauthPassword" type="password" autocomplete="current-password" required><button class="back-button" type="submit">Verify Session</button></form><p id="discordBotHealth" role="status">Checking bot status…</p>
+<p>The bot runs on your existing computer. Jobs stay queued while it is offline.</p>
+<div class="page-actions"><button class="back-button" id="discordSetupBtn" type="button">Configure APD Server</button><button class="back-button" id="discordSyncBtn" type="button">Sync Officer Roles</button></div>
+<button class="back-button" id="discordCatalogBtn" type="button">Load Server Channels and Roles</button><datalist id="discordChannelOptions"></datalist><datalist id="discordRoleOptions"></datalist><p id="discordServerSummary"></p><label for="discordApdRole">APD role ID</label><input id="discordApdRole" list="discordRoleOptions" placeholder="Discord role ID">
+<label for="discordPublishChannel">Announcement publish channel ID</label><input id="discordPublishChannel" list="discordChannelOptions" placeholder="Discord channel ID">
+<label for="discordLogsChannel">Staff logs channel ID</label><input id="discordLogsChannel" list="discordChannelOptions" placeholder="Discord channel ID">
+<label for="discordCalendarPublish">Calendar publish channel</label><input id="discordCalendarPublish" list="discordChannelOptions">
+<label for="discordCalendarLogs">Calendar logs channel</label><input id="discordCalendarLogs" list="discordChannelOptions">
+<label for="discordCidPublish">Private CID publish channel</label><input id="discordCidPublish" list="discordChannelOptions">
+<label for="discordCidLogs">Private CID logs channel</label><input id="discordCidLogs" list="discordChannelOptions">
+<label for="discordMentionRoles">Additional permitted role IDs (comma separated)</label><input id="discordMentionRoles">
+<label for="discordReminderMinutes">Reminder minutes before training (up to 3, comma separated; blank disables)</label><input id="discordReminderMinutes" value="60"><button class="back-button" id="discordSaveConfigBtn" type="button">Save Discord Channels</button>
+<div class="page-actions"><button class="back-button" id="discordRegisterCommandsBtn">Register Slash Commands</button><button class="back-button" id="discordWakeBtn">Process One Delivery</button></div>
+<label for="discordRetryId">Failed job ID</label><input id="discordRetryId"><button class="back-button" id="discordRetryBtn">Retry Failed Job</button>
+<p>Uncertain deliveries require manual review; they cannot be blindly retried.</p>
+<section><h3>Security Center</h3><p>Discord credentials are server-side only. CID uses a separate permission. Changes to staff access require a recent login. Firestore rule and billing verification require authenticated console access; this page does not claim to verify them automatically.</p><p>Credential rotation is pending until approved and executed. Review the security setup report before going live.</p></section>
+<h3>Security Audit History</h3><label for="securityAuditSearch">Filter recent audit events</label><input id="securityAuditSearch" type="search"><div id="securityAuditList"></div><p id="discordAdminMessage" role="status"></p><h3>Your Recent Deliveries</h3><div id="discordDeliveryList"></div>
+<p><a href="officer.html">Open officer tools and account linking</a></p>
+</section>
     <a class="back-button" href="index.html">← Return Home</a>
   </div>
 </body>

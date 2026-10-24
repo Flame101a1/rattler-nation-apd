@@ -11,6 +11,8 @@
 <script type="application/json" data-portal-module="announcements.js"></script>
 <script type="module" src="portal-bootstrap.js"></script>
 <link rel="icon" type="image/png" href="images/austin-police-patch.png">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://*.workers.dev; frame-src https://docs.google.com https://*.firebaseapp.com https://accounts.google.com; form-action 'self' https://docs.google.com; base-uri 'self'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
 </head>
 
 <body>
@@ -71,6 +73,14 @@
 <small class="field-error" data-error-for="announcementMessage"></small>
 </div>
 
+<input id="announcementEditingId" type="hidden"><input id="announcementEditingDraft" type="hidden">
+<div class="form-group"><label for="announcementFormat">Discord Format</label><select id="announcementFormat"><option value="plain">Plain announcement</option><option value="embed">Department embed</option></select></div>
+<div class="form-group"><label for="announcementPublishState">Publishing</label><select id="announcementPublishState"><option value="published">Publish now</option><option value="draft">Save draft</option><option value="scheduled">Schedule publication</option></select></div>
+<div class="form-group"><label for="announcementSchedule">Scheduled time (your local time)</label><input id="announcementSchedule" type="datetime-local"></div>
+<div class="form-group"><label for="announcementDestination">Discord destination</label><select id="announcementDestination"><option value="default">Configured department announcements channel</option></select></div>
+<label><input id="announcementPingApd" type="checkbox" checked>Notify the APD role on first publication</label>
+<div class="form-group"><label for="announcementRoleIds">Additional approved role IDs (comma-separated)</label><input id="announcementRoleIds" placeholder="Only owner-approved role IDs are allowed"></div>
+<div class="span-2"><button class="back-button" id="announcementPreviewBtn" type="button">Preview</button><button class="back-button" id="announcementCancelEditBtn" type="button">Clear Editor</button><pre id="announcementPreview" hidden style="white-space:pre-wrap;overflow-wrap:anywhere"></pre></div>
 <div class="form-status span-2" id="announcementFormStatus" aria-live="polite"></div>
 
 <div class="announcement-form-actions span-2">
@@ -79,6 +89,7 @@
 </form>
 </section>
 
+<section class="page-card" id="announcementDraftPanel" hidden><h2>Drafts and Scheduled Announcements</h2><div id="announcementDraftList"></div></section>
 <section class="staff-access-card announcement-access-card" aria-label="Announcement staff access">
 <div class="staff-access-copy">
 <p class="eyebrow">Editor Access</p>
