@@ -13,7 +13,8 @@
     "SITE_URL": "https://flame101a1.github.io/rattler-nation-apd/",
     "ALLOWED_ORIGIN": "https://flame101a1.github.io",
     "DAILY_JOB_LIMIT": "300",
-    "RECONCILE_MEMBERS": "false"
+    "RECONCILE_MEMBERS": "false",
+    "INTEGRATION_ENABLED": "false"
   },
   "observability": {
     "enabled": false

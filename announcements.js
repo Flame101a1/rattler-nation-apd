@@ -130,12 +130,14 @@ function announcementMeta(announcement){
   return escapeHTML(parts.join(" • "));
 }
 
+let announcementSaving=false;
 async function handleAnnouncementSubmit(event){
   event.preventDefault();
+  if(announcementSaving)return;
   clearFormErrors();
 
   if(!userCanManageAnnouncements()){
-    setFormStatus("You must be signed in as an approved editor to publish announcements.");
+    setFormStatus("You must be signed in as an owner to publish announcements.");
     return;
   }
 
@@ -163,29 +165,22 @@ async function handleAnnouncementSubmit(event){
     return;
   }
 
+  announcementSaving=true;
+  const submit=announcementForm.querySelector("button[type=submit],button:not([type])");if(submit)submit.disabled=true;
   try{
     setFormStatus("Publishing announcement...");
     const createdAnnouncement = await createAnnouncement(announcement);
-    await logPortalAction(staffAccess, {
-      action:createdAnnouncement.draft ? "Announcement Draft Saved" : createdAnnouncement.updated ? "Announcement Updated" : "Announcement Published",
-      category:"Announcements",
-      message:`Published ${announcement.priority || "Normal"} announcement: ${announcement.title}.`,
-      targetUid:createdAnnouncement.id || "",
-      targetLabel:announcement.title,
-      announcement:{...announcement},
-      publishDetails:[announcement.message, "Category: " + announcement.category, "Priority: " + announcement.priority, announcement.author ? "Posted by: " + announcement.author : ""].filter(Boolean).join("\n\n")
-    });
     announcementForm.reset();
     setFormStatus(createdAnnouncement.draft ? "Draft saved. Scheduled drafts are published by the serverless scheduler when due." : "Announcement saved. Discord delivery is queued; owners can check delivery status in Admin Console.");
   }catch(error){
     console.error("Announcement publish failed:", error);
     setFormStatus("Announcement could not be published. Check portal access and try again.");
-  }
+  }finally{announcementSaving=false;if(submit)submit.disabled=false;}
 }
 
 async function handleDeleteAnnouncement(announcementId){
   if(!userCanManageAnnouncements()){
-    setAuthStatus("Only approved editors can remove announcements.", "warning");
+    setAuthStatus("Only owners can remove announcements.", "warning");
     return;
   }
 
@@ -202,15 +197,8 @@ async function handleDeleteAnnouncement(announcementId){
 
   try{
     const announcement = currentAnnouncements.find(item => item.id === announcementId);
-    await deleteAnnouncement(announcementId);
-    await logPortalAction(staffAccess, {
-      action:"Announcement Deleted",
-      category:"Announcements",
-      message:`Deleted announcement: ${announcement?.title || announcementId}.`,
-      targetUid:announcementId,
-      targetLabel:announcement?.title || announcementId,
-      announcement:announcement ? {title:announcement.title, message:announcement.message, category:announcement.category, priority:announcement.priority, author:announcement.author} : {}
-    });
+    await deleteAnnouncement(announcementId,announcement||{});
+
   }catch(error){
     console.error("Announcement delete failed:", error);
     setAuthStatus("Announcement could not be deleted. Check portal access and try again.", "error");

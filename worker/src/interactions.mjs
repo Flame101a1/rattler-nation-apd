@@ -20,9 +20,9 @@ export async function interactionIdentity(store,interaction){
  const mapping=await store.get('discordIdentities/'+discordId);if(!mapping) return {discordId,role:null};
  const role=await store.get('userRoles/'+mapping.uid);return {discordId,uid:mapping.uid,role};
 }
-export async function createActivity(store,uid,entry){
+export async function createActivity(store,uid,entry,sourceWrite){
  const logId=crypto.randomUUID(),jobId=crypto.randomUUID();
- await store.commit([{path:'portalLogs/'+logId,data:{...entry,actorUid:uid,createdAt:now()}},{path:'discordJobs/'+jobId,data:{kind:'activity',logId,actorUid:uid,category:entry.category,targetUid:entry.targetUid||'',status:'pending',attempts:0,createdAt:now()}}]);return jobId;
+ await store.commit([...(sourceWrite?[sourceWrite]:[]),{path:'portalLogs/'+logId,data:{...entry,actorUid:uid,createdAt:now()}},{path:'discordJobs/'+jobId,data:{kind:'activity',logId,actorUid:uid,category:entry.category,targetUid:entry.targetUid||'',status:'pending',attempts:0,createdAt:now()}}]);return jobId;
 }
 export async function handleInteraction(store,discord,interaction){
  const identity=await interactionIdentity(store,interaction),name=interaction.data?.name,id=interaction.data?.custom_id;
@@ -55,8 +55,8 @@ export async function handleInteraction(store,discord,interaction){
   const values=Object.fromEntries(interaction.data.components.flatMap(r=>r.components).map(c=>[c.custom_id,c.value]));
   if(!values.message||values.message.length>1800)throw Error('Announcement must be 1–1,800 characters for plain Discord delivery.');
   const record={title:String(values.title||'Department Announcement').slice(0,200),message:values.message,category:'General',priority:'Normal',author:identity.role.displayName||'APD Command',pingApd:true,format:'plain',publishState:'published',createdByUid:identity.uid,updatedByUid:identity.uid,createdAt:now(),updatedAt:now()};
-  const recordId=crypto.randomUUID();await store.set('announcements/'+recordId,record);
-  await createActivity(store,identity.uid,{action:'Announcement Published',category:'Announcements',targetUid:recordId,targetLabel:record.title,announcement:record,message:'Published department announcement.'});return 'Announcement saved and queued for Discord delivery.';
+  const recordId=crypto.randomUUID();
+  await createActivity(store,identity.uid,{action:'Announcement Published',category:'Announcements',targetUid:recordId,targetLabel:record.title,announcement:record,message:'Published department announcement.'},{path:'announcements/'+recordId,data:record});return 'Announcement saved and queued for Discord delivery.';
  }
  if(name==='setup'){
   if(!identity.role.admin)throw Error('Owner access required.');

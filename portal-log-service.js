@@ -37,7 +37,7 @@ export function watchPortalLogs(onLogs, onError){
   );
 }
 
-export async function createPortalLog(logEntry){
+export function addPortalLog(batch,logEntry){
   const normalizedLog = {
     action:logEntry.action || "Portal Action",
     category:logEntry.category || "System",
@@ -50,15 +50,14 @@ export async function createPortalLog(logEntry){
   if(!auth.currentUser) throw Error("Sign in to record a portal action.");
   normalizedLog.actorUid=auth.currentUser.uid;
   const createdLog=doc(portalLogsCollection);
-  const batch=writeBatch(db);
   const record={...normalizedLog,actorDisplayName:logEntry.actorDisplayName||"APD Staff",createdAt:serverTimestamp()};
   for(const key of ["announcement","calendarEvent","suspectNames"]){ if(logEntry[key] !== undefined) record[key]=logEntry[key]; }
   batch.set(createdLog,record);
   addDeliveryJob(batch,createdLog,record);
-  await batch.commit();
-
   return createdLog;
 }
+
+export async function createPortalLog(logEntry){const batch=writeBatch(db);const ref=addPortalLog(batch,logEntry);await batch.commit();return ref;}
 
 export async function logPortalAction(staffAccess, logEntry){
   if(!staffAccess?.user){

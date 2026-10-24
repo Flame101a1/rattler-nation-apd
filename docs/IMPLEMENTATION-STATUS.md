@@ -18,9 +18,9 @@ Current-head public webhook URLs are removed locally. Old published copies and G
 
 ## Validation
 - 31 backend tests pass: authorization, mention restrictions, signed Discord requests, server restriction, safe URLs, immutable job identity, duplicate receipts, uncertain-send recovery, private CID destinations, account/server configuration guards, rank hierarchy, membership-role isolation, path traversal rejection, finalized training protection, and Austin daylight-saving conversion.
-- 13 Firestore emulator tests pass against demo-rattler-apd: private reads, self-promotion denial, CID/editor separation, owner publishing, matched atomic log/jobs, protected links/receipts/status, code expiry, valid private warrant submission, recent authentication, and immutable logs.
+- 14 Firestore emulator tests pass against demo-rattler-apd: private reads, self-promotion denial, CID/editor separation, owner publishing, matched atomic log/jobs, protected links/receipts/status, code expiry, valid private warrant submission, recent authentication, immutable logs, and atomic announcement rollback.
 - Source syntax, local HTML references, duplicate element IDs, and public webhook scan pass (42 application JavaScript files).
-- Worker bundle deploys successfully; deployment startup measured at 1 ms. Full authenticated workflow CPU usage on Workers Free still requires live testing.
+- Worker bundle deploys successfully; deployment startup measured at 1–2 ms. Full authenticated workflow CPU usage on Workers Free still requires live testing.
 - Worker npm audit: zero known findings after patching the HTTP development dependency.
 - Emulator toolchain updated to Firebase CLI 15.34.1 with compatible gRPC/UUID fixes. Three moderate transitive findings remain through @google-cloud/pubsub and @opentelemetry/core; no high/critical findings remain. These are local test tools, not deployed Worker runtime dependencies. No incompatible major override was applied merely to suppress the audit.
 - Visual/accessibility browser QA and live Discord workflows are not yet verified.
@@ -31,3 +31,5 @@ Discord application creation, secure bot credential entry, bot installation, con
 Not every requested enhancement is complete: full security-center diagnostics, all notification templates/options, exhaustive security/visual tests, and operational quota/load measurement remain. Existing Google documents are independent resources. Account linking is explicit; periodic membership reconciliation is delayed and disabled until its intent/permission checks are completed. No persistent computer hosting is required for the deployed integration; the loopback setup helper is temporary.
 
 The temporary loopback Discord setup page was tested for password-field handling, no-store headers, origin restrictions, and CSRF rejection. It requires direct user confirmation of the actual guild and full proposed layout. Current local setup URL: http://127.0.0.1:64722 (expires after 30 minutes; restart worker/scripts/discord-setup.mjs if needed). No bot credentials have been received through chat.
+
+Background work is explicitly paused through INTEGRATION_ENABLED=false until the Workers Free plan, bot installation, and private-permission configuration are confirmed. The signed Discord handshake remains available for Developer Portal endpoint verification. Announcement source/audit/delivery writes and deletions are now atomic; finalized training registrations and backend document paths have additional regression-tested guards.

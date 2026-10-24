@@ -9,13 +9,14 @@ export default {
  async fetch(request,env,context){
   const url=new URL(request.url),store=new Store(env),discord=new Discord(env);
   const origin=request.headers.get('Origin'),cors=origin===env.ALLOWED_ORIGIN?{'Access-Control-Allow-Origin':origin,'Vary':'Origin'}:{};
-  if(url.pathname==='/health')return json({service:'Rattler Nation APD',architecture:'serverless',configured:!!(env.DISCORD_BOT_TOKEN&&env.FIREBASE_PRIVATE_KEY),membershipReconciliationDefault:env.RECONCILE_MEMBERS==='true'});
+  if(url.pathname==='/health')return json({service:'Rattler Nation APD',architecture:'serverless',enabled:env.INTEGRATION_ENABLED==='true',configured:!!(env.DISCORD_BOT_TOKEN&&env.FIREBASE_PRIVATE_KEY),membershipReconciliationDefault:env.RECONCILE_MEMBERS==='true'});
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers:{...cors,'Access-Control-Allow-Methods':'POST','Access-Control-Allow-Headers':'Authorization,Content-Type'}});
   if(url.pathname==='/interactions'&&request.method==='POST'){
    if(Number(request.headers.get('Content-Length')||0)>32000)return new Response('Too large',{status:413});
    const body=await request.text();if(body.length>32000||!await discord.verify(request,body))return new Response('Invalid signature',{status:401});
    let interaction;try{interaction=JSON.parse(body);}catch{return new Response('Invalid JSON',{status:400});}
    if(interaction.type===1)return json({type:1});
+   if(env.INTEGRATION_ENABLED!=='true')return json({type:4,data:{content:'The APD integration is being configured. Department workflows will be available after setup verification.',flags:64}});
    if(interaction.guild_id!==env.DISCORD_GUILD_ID)return json({type:4,data:{content:'This application is restricted to the configured APD server.',flags:64}});
    if(interaction.type===2&&interaction.data?.name==='announce'){
     const identity=await interactionIdentity(store,interaction);if(!identity.role?.admin)return json({type:4,data:{content:'Owner access required.',flags:64}});
@@ -58,13 +59,13 @@ export default {
      await discord.api('/applications/'+env.DISCORD_APPLICATION_ID+'/guilds/'+env.DISCORD_GUILD_ID+'/commands','PUT',commands);
      await audit(store,user.uid,'Register slash commands',env.DISCORD_GUILD_ID,'success');return json({ok:true},200,cors);
     }
-    if(url.pathname==='/api/wake'){context.waitUntil(tick(store,discord,env));return json({ok:true},202,cors);}
+    if(url.pathname==='/api/wake'){if(env.INTEGRATION_ENABLED!=='true')return json({error:'Integration is paused during setup.'},503,cors);context.waitUntil(tick(store,discord,env));return json({ok:true},202,cors);}
    }catch(error){return json({error:redact(error)},401,cors);}
   }
   return json({error:'Not found'},404);
  },
  async scheduled(controller,env,context){
-  if(!env.DISCORD_BOT_TOKEN||!env.FIREBASE_PRIVATE_KEY||!env.FIREBASE_CLIENT_EMAIL)return;
+  if(env.INTEGRATION_ENABLED!=='true'||!env.DISCORD_BOT_TOKEN||!env.FIREBASE_PRIVATE_KEY||!env.FIREBASE_CLIENT_EMAIL)return;
   const store=new Store(env),discord=new Discord(env);
   context.waitUntil((async()=>{try{const minute=new Date(controller.scheduledTime).getUTCMinutes();
 if(minute%10===0)await reconcileMembers(store,discord,env);

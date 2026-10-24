@@ -21,10 +21,12 @@ Workers Free has documented request/CPU/subrequest limits; Firestore Spark has d
 
 Cron jobs are periodic and may be delayed. APD membership reconciliation is disabled by default; when enabled it scans up to ten members per ten-minute interval, requires Members intent, and is not immediate join detection. Large servers need multiple intervals. Verified /link onboarding is the alternative. Neither approach automatically grants ranks or privileged website access.
 
-Messages with uncertain delivery after a crash enter manual_review rather than blindly retrying and possibly pinging twice. Check Discord and the receipt before recovery. Failed deliveries can be retried through the owner console. A successful source save followed by a failed activity-log write can leave content without a delivery job; inspect delivery status rather than assuming every saved record was sent.
+Messages with uncertain delivery after a crash enter manual_review rather than blindly retrying and possibly pinging twice. Check Discord and the receipt before recovery. Failed deliveries can be retried through the owner console. Announcement source/audit/job writes are atomic. Some legacy calendar/CID flows still save their source separately from the activity log, so inspect delivery status rather than assuming every saved record was sent.
 
 ## External documents and forms
 Existing Google roster, SOP, warrant templates, and Google Forms remain in place. They are not automatically imported. integrations/google-forms-notifications.gs is an optional form-bound trigger requiring explicit installation and authorization. Its HMAC-authenticated notification contains only form type and response ID; no private answers are sent to Discord. It is not currently installed.
 
 ## Remaining scope
 The current implementation includes the core workflows, but does not yet provide every requested enhancement: all notification templates, comprehensive security-center coverage, full visual/accessibility QA remain pending. Do not represent them as deployed functionality.
+
+Activation gate: after confirming Workers Free and successful Discord setup/private-permission tests, set INTEGRATION_ENABLED=true and redeploy. It is deliberately false in the current deployment.
